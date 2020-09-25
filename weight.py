@@ -35,7 +35,7 @@ for block in blocks:
         raise ValueError("Unrecognized block! " + block_name)
     generators.append(gen)
 
-data = json.load(open('propagated_small.json', 'r'))
+data = json.load(open('propagated.json', 'r'))
 energy = np.array(data["energy"])
 zenith = np.array(data["zenith"])
 azimuth = np.array(data["azimuth"])
@@ -135,8 +135,8 @@ fs_prob = int_model.prob_final_state(props)
 #print(fs_prob)
 #print(k_prob/gen.prob_kinematics(props))
 #print(pos_prob/gen.prob_pos(props))
+#print(track_length)
 gen_prob /= k_prob * fs_prob
-w = 1.0 / gen_prob
 
 flux = np.empty(len(props))
 
@@ -154,9 +154,13 @@ for i, (flavor, zenith, energy, particle_type) in enumerate(zip(flavors, props["
     flux[i] = prompt_flux + pion_flux + kaon_flux
 
 livetime = 365.25 * 24 * 3600
-#print(flux)
 
-print(np.sum(flux * livetime / gen_prob * 1e7 / 10000))
+mask = track_length > 2
+mask = np.logical_and(mask, entry_energy > 100)
+mask = np.logical_and(mask, entry_zenith > np.pi/2.)
+
+w = flux * livetime / gen_prob
+print(np.sum(w[mask]))
 
 #first_pos, last_pos = gen.get_considered_range(props)
 #phys_pos = int_model.prob_pos(props, first_pos, last_pos)
