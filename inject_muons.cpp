@@ -9,7 +9,7 @@
 int main(void){
 
     // define some parameters shared by both of the injectors
-    int n_events = int(1e4);
+    int n_events = int(1e7);
     bool is_ranged = true;
 
     std::string xs_base = "./csms_differential_v1.0/";
