@@ -32,7 +32,7 @@ interpolation_def.path_to_tables_readonly = "/home/austin/.local/share/PROPOSAL/
 
 mu_def = pp.particle.MuMinusDef()
 #prop = pp.Propagator(particle_def=mu_def, sector_defs=[sector], detector=geo_detector, interpolation_def=interpolation_def)
-prop = pp.Propagator(particle_def=mu_def, config_file="./PROPOSAL_config.json")
+prop = pp.Propagator(particle_def=mu_def, config_file="./config.json")
 
 s = LWpy.read_stream('./config_DUNE.lic')
 blocks = s.read()
