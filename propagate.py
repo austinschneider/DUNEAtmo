@@ -8,23 +8,6 @@ import json
 medium = pp.medium.StandardRock()
 
 mu_def = pp.particle.MuMinusDef()
-geo_detector = pp.geometry.Box(pp.Vector3D(), 84, 58, 12)
-det_sector = pp.SectorDefinition()
-det_sector.medium = medium
-det_sector.geometry = geo_detector
-det_sector.particle_location = pp.ParticleLocation.inside_detector
-det_sector.scattering_model = pp.scattering.ScatteringModel.Moliere
-det_sector.cut_settings.ecut = 500
-det_sector.cut_settings.vcut = 0.05
-
-geo_outside = pp.geometry.Box(pp.Vector3D(0, 0, 0), 5000*100, 5000*100, 5000*100)
-out_sector = pp.SectorDefinition()
-out_sector.medium = medium
-out_sector.geometry = geo_outside
-out_sector.particle_location = pp.ParticleLocation.inside_detector
-out_sector.scattering_model = pp.scattering.ScatteringModel.Moliere
-out_sector.cut_settings.ecut = 500
-out_sector.cut_settings.vcut = 0.05
 
 interpolation_def = pp.InterpolationDef()
 interpolation_def.path_to_tables = "/home/austin/.local/share/PROPOSAL/tables"
@@ -215,6 +198,7 @@ def get_particle_at_entry(geo, parent, particles):
         delta_energy = final_energy - initial_energy
 
         entry_energy = delta_energy/total_distance*distance_to_entry + initial_energy
+        assert(initial_energy > entry_energy)
         entry_pos = initial_pos + distance_to_entry*final_initial_direction
 
         return entry_energy, entry_pos, final_initial_direction, track_length
@@ -242,7 +226,7 @@ geo_det_quad.append(pp.geometry.Box(pp.Vector3D(-36, 0, 0), 12, 58, 12))
 
 det_geos = [geo_det_single, geo_det_double, geo_det_triple, geo_det_quad]
 geo = geo_det_single[0]
-geo_epsilon = pp.geometry.Box(pp.Vector3D(), 12+0.01, 58+0.01, 12+0.01)
+geo_epsilon = pp.geometry.Box(pp.Vector3D(), 12+1, 58+1, 12+1)
 
 min_energy = 0.2e3
 
@@ -294,7 +278,7 @@ y = props["y"]
 z = props["z"]
 total_column_depth = props["total_column_depth"]
 
-entry_energy = np.array([entry[1][0] for entry in entries])
+entry_energy = np.array([entry[1][0] for entry in entries]) / 1e3
 entry_x = np.array([entry[1][1].x for entry in entries]) / 100.
 entry_y = np.array([entry[1][1].y for entry in entries]) / 100.
 entry_z = np.array([entry[1][1].z for entry in entries]) / 100.
