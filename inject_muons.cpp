@@ -8,18 +8,43 @@
 
 int main(void){
 
-    // define some parameters shared by both of the injectors
-    int n_events = int(1e7);
-    bool is_ranged = true;
+    // define some parameters shared by the injectors
+    int n_ranged_events = int(1e6);
+    int n_volume_events = int(1e5);
 
     std::string xs_base = "./csms_differential_v1.0/";
 
     // specify the final state particles, and construct the first injector
-    LeptonInjector::Particle::ParticleType final_1 = LeptonInjector::Particle::MuMinus;
-    LeptonInjector::Particle::ParticleType final_2 = LeptonInjector::Particle::Hadrons;
     std::string nu_diff_xs = xs_base + "dsdxdy_nu_CC_iso.fits";
     std::string nu_total_xs = xs_base + "sigma_nu_CC_iso.fits";
-    LeptonInjector::Injector the_injector( n_events, final_1, final_2, nu_diff_xs, nu_total_xs, is_ranged);
+
+    LeptonInjector::Injector numu_ranged_injector(n_ranged_events,
+            LeptonInjector::Particle::MuMinus,
+            LeptonInjector::Particle::Hadrons,
+            nu_diff_xs,
+            nu_total_xs,
+            true); // is_ranged
+
+    LeptonInjector::Injector numubar_ranged_injector(n_ranged_events,
+            LeptonInjector::Particle::MuPlus,
+            LeptonInjector::Particle::Hadrons,
+            nu_diff_xs,
+            nu_total_xs,
+            true); // is_ranged
+
+    LeptonInjector::Injector numu_volume_injector(n_volume_events,
+            LeptonInjector::Particle::MuMinus,
+            LeptonInjector::Particle::Hadrons,
+            nu_diff_xs,
+            nu_total_xs,
+            false); // is_ranged
+
+    LeptonInjector::Injector numubar_volume_injector(n_volume_events,
+            LeptonInjector::Particle::MuPlus,
+            LeptonInjector::Particle::Hadrons,
+            nu_diff_xs,
+            nu_total_xs,
+            false); // is_ranged
 
     // some global values shared by all the injectors
     // units come from Constants.h
@@ -34,15 +59,20 @@ int main(void){
     // build the Controller object. This will facilitate the simulation itself
     // We need to pass the first injector while building this Controller
     // Dimensions of DUNE module is 58.2 x 3.5 x 12 x 4
-    LeptonInjector::Controller cont(the_injector,
+    LeptonInjector::Controller cont(numu_ranged_injector,
             minE, maxE,
             gamma,
             minAzimuth, maxAzimuth,
             minZenith, maxZenith,
-            60.*LeptonInjector::Constants::m,
-            60.*LeptonInjector::Constants::m,
-            60.*LeptonInjector::Constants::m,
-            20.*LeptonInjector::Constants::m);
+            30.*LeptonInjector::Constants::m, // injection radius
+            30.*LeptonInjector::Constants::m, // injection length
+            30.*LeptonInjector::Constants::m, // cylinder radius
+            20.*LeptonInjector::Constants::m); // cylinder height
+
+
+    cont.AddInjector(numubar_ranged_injector);
+    cont.AddInjector(numu_volume_injector);
+    cont.AddInjector(numubar_volume_injector);
 
     std::string path;
     if (const char* env_p = getenv("GOLEMSOURCEPATH")){
@@ -65,8 +95,8 @@ int main(void){
 
     cont.SetEarthModel(std::shared_ptr<earthmodel::EarthModelService>(&earthModel));
 
-    cont.NameOutfile("./data_output_DUNE_test.h5");
-    cont.NameLicFile("./config_DUNE_test.lic");
+    cont.NameOutfile("./data_output_DUNE.h5");
+    cont.NameLicFile("./config_DUNE.lic");
 
     // Run the program.
     cont.Execute();
