@@ -61,7 +61,7 @@
 		"geometry":
 		{
 			"shape": "sphere",
-			"origin": [0, 0, -6372186],
+			"origin": [0, 0, -6369844],
 			"outer_radius": 1000000000,
 			"inner_radius": 6374134
 		}
@@ -76,7 +76,7 @@
 			"geometry":
 			{
 				"shape": "sphere",
-				"origin": [0, 0, -6372186],
+				"origin": [0, 0, -6369844],
 				"outer_radius": 1000000000,
 				"inner_radius": 6374134
 			},
