@@ -4,7 +4,136 @@ import h5py as h5
 import LWpy
 import LeptonInjector
 import json
-from enum import Enum
+from enum import Enum, IntEnum
+
+def interpolate_energy(last_particle, particle, continuous_losses, distance, d):
+    initial_energy = last_particle.energy
+    if len(continuous_losses) > 1:
+        final_energy = continuous_losses[-1].energy
+    else:
+        final_energy = particle.energy
+    delta_energy = final_energy - initial_energy
+    point_energy = delta_energy/distance*d + initial_energy
+    return point_energy
+
+def get_particle_intersections(geo, parent, particles):
+    last_particle = parent
+    d0, d1 = geo.distance_to_border(parent.position, parent.direction)
+    last_inside = d0 >= 0 and d1 < 0
+    last_k = -1
+
+    entries = []
+    exits = []
+
+    track_length = 0
+    deposited_energy = 0
+
+    for j, particle in enumerate(particles):
+        # Skip the continuous energy losses
+        if int(particle.type) == int(pp.particle.Interaction_Type.ContinuousEnergyLoss):
+            continue
+
+        direction = particle.position - last_particle.position
+        distance = direction.magnitude()
+        direction.normalize()
+        if distance == 0:
+            direction = last_particle.direction
+
+        # Skip if the particle didn't move, but update the references
+        #if distance == 0:
+        #    last_particle = particle
+        #    last_k = j
+        #    d0, d1 = geo.distance_to_border(particle.position, direction)
+        #    last_inside = d0 > 0 and d1 < 0
+        #    continue
+
+        if last_inside:
+            # We started inside the detector
+            # Don't worry about the entry position
+            # Either the event started in the detector
+            # or the entry point was handled in the last iteration
+            d0, d1 = geo.distance_to_border(last_particle.position, direction)
+            # We're inside so there should only be one intersection
+            assert(d0 >= 0 and d1 < 0)
+
+            # Check if we go far enough to exit
+            if distance >= d0: # Exited the detector
+                track_length += d0
+                ## Compute exit position and energy
+                continuous_losses = particles[last_k+1:j]
+                exit_energy = interpolate_energy(last_particle, particle, continuous_losses, distance, d0)
+                exit_pos = last_particle.position + direction * d0
+                exit_dir = direction
+                exits.append((exit_energy, exit_pos, exit_dir))
+                deposited_energy += last_particle.energy - exit_energy
+            else: # Not far enough
+                track_length += distance
+                deposited_energy += last_particle.energy - particle.energy
+                # Do nothing
+                pass
+            pass
+        else:
+            # We started outside the detector
+            # Check if the path could intersect the detector
+            d0, d1 = geo.distance_to_border(last_particle.position, direction)
+            # At the initial point we should not be inside the detector
+            # We should either be outside pointed away, or outside pointed towards
+            assert(np.sign(d0) == np.sign(d1))
+            if d0 > 0 and d1 > 0: # We're outside pointed towards
+                # Check if we went far enough to enter the detector
+                if distance >= d1: # Entered AND exited the detector
+                    track_length += d1 - d0
+                    ## Compute entry position and entry energy
+                    continuous_losses = particles[last_k+1:j]
+                    entry_energy = interpolate_energy(last_particle, particle, continuous_losses, distance, d0)
+                    entry_pos = last_particle.position + direction * d0
+                    entry_dir = direction
+                    entries.append((entry_energy, entry_pos, entry_dir))
+                    ## Compute exit position and exit energy
+                    exit_energy = interpolate_energy(last_particle, particle, continuous_losses, distance, d1)
+                    exit_pos = last_particle.position + direction * d1
+                    exit_dir = direction
+                    exits.append((exit_energy, exit_pos, exit_dir))
+                    deposited_energy += entry_energy - exit_energy
+                elif distance >= d0: # Entered the detector
+                    track_length += distance - d0
+                    ## Compute entry position and entry energy
+                    continuous_losses = particles[last_k+1:j]
+                    entry_energy = interpolate_energy(last_particle, particle, continuous_losses, distance, d0)
+                    entry_pos = last_particle.position + direction * d0
+                    entry_dir = direction
+                    entries.append((entry_energy, entry_pos, entry_dir))
+                    deposited_energy += entry_energy - particle.energy
+                else: # Not far enough
+                    # Do nothing
+                    pass
+            else: # We're outside pointed away
+                # Do nothing
+                pass
+
+        # Update the last particle information
+        last_particle = particle
+        last_k = j
+        d0, d1 = geo.distance_to_border(particle.position, direction)
+        last_inside = d0 >= 0 and d1 < 0
+
+    # There can only be one! (unless the muon scatters in and out of the detector...)
+    if len(entries) > 1 or len(exits) > 1:
+        print("WARNING: muon found skimming the surface of the detector! This should be extremely rare!!!")
+
+    # return the first entry
+    if len(entries) > 0:
+        entry_ret = entries[0]
+    else:
+        entry_ret = None
+
+    # return the last exit
+    if len(exits) > 0:
+        exit_ret = exits[-1]
+    else:
+        exit_ret = None
+
+    return entry_ret, exit_ret, track_length, deposited_energy
 
 def get_particle_at_entry(geo, parent, particles):
     d0, d1 = geo.distance_to_border(parent.position, parent.direction)
@@ -37,7 +166,6 @@ def get_particle_at_entry(geo, parent, particles):
         if last_infront and inside:
             entered = True
             index = j
-            print("First")
             break
         last_inside = inside
         last_infront = infront
@@ -103,7 +231,7 @@ def get_particle_at_entry(geo, parent, particles):
         assert(initial_energy > entry_energy)
         entry_pos = initial_pos + distance_to_entry*final_initial_direction
 
-        return entry_energy, entry_pos, final_initial_direction, track_length
+        return entry_energy, entry_pos, final_initial_direction
     else:
         return None
 
@@ -115,7 +243,7 @@ def get_particle_at_exit(geo, parent, particles):
 
     last_infront_part = None
     last_infront_k = None
-    if last_infront:
+    if last_infront or last_inside:
         last_infront_part = parent
         last_infront_k = -1
 
@@ -138,7 +266,6 @@ def get_particle_at_exit(geo, parent, particles):
         if (last_inside or last_infront) and outside:
             exited = True
             index = j
-            print("First")
             break
         last_inside = inside
         last_infront = infront
@@ -156,6 +283,7 @@ def get_particle_at_exit(geo, parent, particles):
         initial_pos = last_infront_part.position
 
         part = particles[index]
+        print(len(particles), index)
 
         final_pos = part.position
 
@@ -172,7 +300,16 @@ def get_particle_at_exit(geo, parent, particles):
         assert(np.abs(final_initial_direction.magnitude() - 1.0) < 1e-8)
         assert(final_initial_direction*parent.direction > 0)
         #print(np.abs(final_initial_direction*parent.direction - 1.0))
-        distance_to_exit = geo.distance_to_border(initial_pos, final_initial_direction)[0]
+
+        d0, d1 = geo.distance_to_border(initial_pos, final_initial_direction)
+        print(d0, d1)
+        distance_to_exit = d0 if d1 < 0 else d1
+        d0, d1 = geo.distance_to_border(final_pos, final_initial_direction)
+        print(d0, d1)
+        d0, d1 = geo.distance_to_border(final_pos, part.direction)
+        print(d0, d1)
+        print(total_distance)
+
 
         assert(distance_to_exit > 0)
         assert(total_distance > distance_to_exit)
@@ -192,7 +329,7 @@ def is_starting(geo, parent, particles):
     inside = d0 > 0 and d1 < 0
     return inside
 
-class EventMorphology(Enum):
+class EventMorphology(IntEnum):
     missing = 0
     starting = 1
     stopping = 2
@@ -232,22 +369,22 @@ def compute_starting_event_props(parent, particles, entry_info, exit_info):
     return energy_in_detector, track_length, entry_info, exit_info
 
 def compute_contained_event_props(parent, particles, entry_info, exit_info):
-    energy_in_detector = parent.energy - [p.energy for p in particles if abs(int(p.type)) in [12, 14, 16]]
+    energy_in_detector = parent.energy - np.sum([p.energy for p in particles if abs(int(p.type)) in [12, 14, 16]])
 
     track_length = 0
     last_pos = parent.position
-    for i, p in enumerate(particles[-2]):
+    for i, p in enumerate(particles[:-2]):
         track_length += (last_pos - p.position).magnitude()
         last_pos = p.position
     return energy_in_detector, track_length, entry_info, exit_info
 
 def compute_stopping_event_props(parent, particles, entry_info, exit_info):
     entry_energy, entry_pos, _ = entry_info
-    energy_in_detector = entry_energy - [p.energy for p in particles if abs(int(p.type)) in [12, 14, 16]]
+    energy_in_detector = entry_energy - np.sum([p.energy for p in particles if abs(int(p.type)) in [12, 14, 16]])
 
     track_length = 0
     last_pos = entry_pos
-    for i, p in enumerate(particles[-2]):
+    for i, p in enumerate(particles[:-2]):
         if p.energy < entry_energy:
             track_length += (last_pos - p.position).magnitude()
             last_pos = p.position
@@ -264,15 +401,29 @@ def compute_sim_info(geos, parent, particles):
     start_info = None
     end_info = None
     path_pairs = []
+    decay_products = [p for i,p in zip(range(max(len(particles)-3,0),len(particles)), particles[-3:]) if int(p.type) <= 1000000001]
+    if len(decay_products) == 0:
+        print([p.type for p in particles])
+    else:
+        particles = particles[:-len(decay_products)]
+        dummy_particle = pp.particle.DynamicData(1000000001)
+        dummy_particle.position = decay_products[-1].position
+        if len(particles) > 0:
+            dummy_particle.direction = particles[-1].direction
+        else:
+            dummy_particle.direction = parent.direction
+        dummy_particle.energy = np.sum([p.energy for p in decay_products if abs(int(p.type)) in [12, 14, 16]])
+        particles.append(dummy_particle)
     for geo in geos:
         starting = is_starting(geo, parent, particles)
-        entry_info = None
-        if not starting:
-            entry_info = get_particle_at_entry(geo, parent, particles)
+        entry_info, exit_info, track_length, energy_in_detector = get_particle_intersections(geo, parent, particles)
+        #entry_info = None
+        #if not starting:
+        #    entry_info = get_particle_at_entry(geo, parent, particles)
         entering = entry_info is not None
-        exit_info = None
-        if entry_info is not None or starting:
-            exit_info = get_particle_at_exit(geo, parent, particles)
+        #exit_info = None
+        #if entry_info is not None or starting:
+        #    exit_info = get_particle_at_exit(geo, parent, particles)
         exiting = exit_info is not None
 
         through_going = entering and exiting
@@ -284,16 +435,16 @@ def compute_sim_info(geos, parent, particles):
         intersects |= not missing
         contained |= starting and (not exiting)
 
-        energy_in_detector = 0
-        track_length = 0
-        if through_going: # muon just passing through
-            energy_in_detector, track_length, _, _ = compute_through_going_event_props(parent, particles, entry_info, exit_info)
-        elif starting and exiting: # muon begins in the detector but doesn't stay
-            energy_in_detector, track_length, _, _ = compute_starting_event_props(parent, particles, entry_info, exit_info)
-        elif contained: # muon is only ever in the detector
-            energy_in_detector, track_length, _, _ = compute_contained_event_props(parent, particles, entry_info, exit_info)
-        elif entering and (not exiting): # muon comes from outside to stop in the detector
-            energy_in_detector, track_length, _, _ = compute_starting_event_props(parent, particles, entry_info, exit_info)
+        #energy_in_detector = 0
+        #track_length = 0
+        #if through_going: # muon just passing through
+        #    energy_in_detector, track_length, _, _ = compute_through_going_event_props(parent, particles, entry_info, exit_info)
+        #elif starting and exiting: # muon begins in the detector but doesn't stay
+        #    energy_in_detector, track_length, _, _ = compute_starting_event_props(parent, particles, entry_info, exit_info)
+        #elif contained: # muon is only ever in the detector
+        #    energy_in_detector, track_length, _, _ = compute_contained_event_props(parent, particles, entry_info, exit_info)
+        #elif entering and (not exiting): # muon comes from outside to stop in the detector
+        #    energy_in_detector, track_length, _, _ = compute_stopping_event_props(parent, particles, entry_info, exit_info)
         deposited_energy += energy_in_detector
         detector_track_length += track_length
 
@@ -320,63 +471,3 @@ def compute_sim_info(geos, parent, particles):
 
     return morphology, deposited_energy, detector_track_length, start_info, end_info, path_pairs
 
-def intersects_geo(geo, particle):
-    d0, d1 = geo_epsilon.distance_to_border(pp_part.position, pp_part.direction)
-    outside = d0 < 0 and d1 < 0
-    return not outside
-
-def prep_dict(props):
-    pass
-
-entries_mask = np.array(entries_mask)
-mask = np.zeros(len(props)).astype(bool)
-mask[:len(entries_mask)] = entries_mask
-props = props[mask]
-
-energy = props["energy"]
-zenith = props["zenith"]
-azimuth = props["azimuth"]
-bjorken_x = props["bjorken_x"]
-bjorken_y = props["bjorken_y"]
-final_type_0 = props["final_type_0"]
-final_type_1 = props["final_type_1"]
-particle = props["particle"]
-x = props["x"]
-y = props["y"]
-z = props["z"]
-total_column_depth = props["total_column_depth"]
-
-entry_energy = np.array([entry[1][0] for entry in entries]) / 1e3
-entry_x = np.array([entry[1][1].x for entry in entries]) / 100.
-entry_y = np.array([entry[1][1].y for entry in entries]) / 100.
-entry_z = np.array([entry[1][1].z for entry in entries]) / 100.
-entry_nx = np.array([entry[1][2].x for entry in entries])
-entry_ny = np.array([entry[1][2].y for entry in entries])
-entry_nz = np.array([entry[1][2].z for entry in entries])
-entry_zenith = np.arccos(entry_nz)
-entry_azimuth = np.arctan2(entry_ny, entry_nx)
-track_length = np.array([entry[1][3] for entry in entries]) / 100.
-
-data = {
-    'energy': energy.tolist(),
-    'zenith': zenith.tolist(),
-    'azimuth': azimuth.tolist(),
-    'bjorken_x': bjorken_x.tolist(),
-    'bjorken_y': bjorken_y.tolist(),
-    'final_type_0': final_type_0.tolist(),
-    'final_type_1': final_type_1.tolist(),
-    'particle': particle.tolist(),
-    'x': x.tolist(),
-    'y': y.tolist(),
-    'z': z.tolist(),
-    'total_column_depth': total_column_depth.tolist(),
-    'entry_energy': entry_energy.tolist(),
-    'entry_x': entry_x.tolist(),
-    'entry_y': entry_y.tolist(),
-    'entry_z': entry_z.tolist(),
-    'entry_zenith': entry_zenith.tolist(),
-    'entry_azimuth': entry_azimuth.tolist(),
-    'track_length': track_length.tolist(),
-    }
-
-json.dump(data, open('propagated.json', 'w'))
