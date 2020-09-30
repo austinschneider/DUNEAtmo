@@ -7,17 +7,15 @@ import json
 import sim_tools
 from tqdm import tqdm
 
-medium = pp.medium.StandardRock()
-
-mu_def = pp.particle.MuMinusDef()
-
 interpolation_def = pp.InterpolationDef()
 interpolation_def.path_to_tables = "/home/austin/.local/share/PROPOSAL/tables"
 interpolation_def.path_to_tables_readonly = "/home/austin/.local/share/PROPOSAL/tables"
 
-mu_def = pp.particle.MuMinusDef()
-#prop = pp.Propagator(particle_def=mu_def, sector_defs=[sector], detector=geo_detector, interpolation_def=interpolation_def)
-prop = pp.Propagator(particle_def=mu_def, config_file="./config.json")
+mu_minus_def = pp.particle.MuMinusDef()
+prop_mu_minus = pp.Propagator(particle_def=mu_minus_def, config_file="./config.json")
+
+mu_plus_def = pp.particle.MuPlusDef()
+prop_mu_plus = pp.Propagator(particle_def=mu_plus_def, config_file="./config.json")
 
 s = LWpy.read_stream('./config_DUNE.lic')
 blocks = s.read()
@@ -43,7 +41,7 @@ for block in blocks:
         raise ValueError("Unrecognized block! " + block_name)
     generators.append(gen)
 
-data_file = h5.File("data_output_DUNE_2.h5")
+data_file = h5.File("data_output_DUNE.h5")
 injector_list = [i for i in data_file.keys()]
 props = None
 mu_props = None
@@ -77,7 +75,7 @@ for i in injector_list:
         mu_props = np.concatenate([mu_props, mp])
 
 def make_p(p, mu_p):
-    type = mu_def.particle_type
+    type = mu_p["particle"]
     pos = [pos_x*100. for pos_x in mu_p["position"]]
     position = pp.Vector3D(*pos)
     zenith, azimuth = mu_p["direction"]
@@ -138,8 +136,7 @@ entries = []
 entries_mask = []
 
 def save_entries():
-    mask = np.zeros(len(props)).astype(bool)
-    mask[:len(entries_mask)] = np.array(entries_mask)
+    mask = order[:len(entries_mask)][entries_mask]
     these_props = props[mask]
     mu_these_props = mu_props[mask]
 
@@ -181,19 +178,28 @@ def save_entries():
     entry_nx = np.array([getx(entry,3,2) for entry in entries])
     entry_ny = np.array([gety(entry,3,2) for entry in entries])
     entry_nz = np.array([getz(entry,3,2) for entry in entries])
+    entry_d = np.sqrt(entry_nx**2 + entry_ny**2 + entry_nz**2)
+    entry_nx /= entry_d
+    entry_ny /= entry_d
+    entry_nz /= entry_d
     entry_zenith = np.arccos(entry_nz)
     entry_azimuth = np.arctan2(entry_ny, entry_nx)
 
-    exit_energy = np.array([get(entry,3,0) for entry in entries]) / 1e3
-    exit_x = np.array([getx(entry,3,1) for entry in entries]) / 100.
-    exit_y = np.array([gety(entry,3,1) for entry in entries]) / 100.
-    exit_z = np.array([getz(entry,3,1) for entry in entries]) / 100.
-    exit_nx = np.array([getx(entry,3,2) for entry in entries])
-    exit_ny = np.array([gety(entry,3,2) for entry in entries])
-    exit_nz = np.array([getz(entry,3,2) for entry in entries])
+    exit_energy = np.array([get(entry,4,0) for entry in entries]) / 1e3
+    exit_x = np.array([getx(entry,4,1) for entry in entries]) / 100.
+    exit_y = np.array([gety(entry,4,1) for entry in entries]) / 100.
+    exit_z = np.array([getz(entry,4,1) for entry in entries]) / 100.
+    exit_nx = np.array([getx(entry,4,2) for entry in entries])
+    exit_ny = np.array([gety(entry,4,2) for entry in entries])
+    exit_nz = np.array([getz(entry,4,2) for entry in entries])
+    exit_d = np.sqrt(exit_nx**2 + exit_ny**2 + exit_nz**2)
+    exit_nx /= exit_d
+    exit_ny /= exit_d
+    exit_nz /= exit_d
     exit_zenith = np.arccos(exit_nz)
     exit_azimuth = np.arctan2(exit_ny, exit_nx)
 
+    this_check = final_type_0.tolist()
     data = {
         'energy': energy.tolist(),
         'zenith': zenith.tolist(),
@@ -247,7 +253,10 @@ for i in tqdm(range(len(props)), total=len(props)):
     if outside:
         entries_mask.append(False)
     else:
-        secondaries = prop.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
+        if mu_part["particle"] == 13:
+            secondaries = prop_mu_minus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
+        elif mu_part["particle"] == -13:
+            secondaries = prop_mu_plus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
         particles = secondaries.particles
 
         entry = sim_tools.compute_sim_info(geo_det_single, pp_part, particles)
