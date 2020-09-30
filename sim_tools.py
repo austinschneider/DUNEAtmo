@@ -431,7 +431,7 @@ def compute_sim_info(geos, parent, particles):
         missing = (not entering) and (not starting)
 
         starts |= starting
-        stops |= starting
+        stops |= stopping
         intersects |= not missing
         contained |= starting and (not exiting)
 
