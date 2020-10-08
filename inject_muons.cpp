@@ -5,8 +5,22 @@
 #include <earthmodel-service/EarthModelService.h>
 #include <string>
 #include <memory>
+#include <chrono>
+#include <ctime>
+#include "date.h"
+
+template <class Precision>
+std::string getISOCurrentTimestamp()
+{
+    auto now = std::chrono::system_clock::now();
+    return date::format("%FT%TZ", date::floor<Precision>(now));
+}
 
 int main(void){
+
+    //std::cout << getISOCurrentTimestamp<std::chrono::seconds>() << std::endl;
+    //throw(1);
+
 
     // define some parameters shared by the injectors
     int n_ranged_events = int(1e6);
@@ -95,8 +109,8 @@ int main(void){
 
     cont.SetEarthModel(std::shared_ptr<earthmodel::EarthModelService>(&earthModel));
 
-    cont.NameOutfile("./data_output_DUNE.h5");
-    cont.NameLicFile("./config_DUNE.lic");
+    cont.NameOutfile("./injected/data_output_DUNE.h5");
+    cont.NameLicFile("./injected/config_DUNE.lic");
 
     // Run the program.
     cont.Execute();
