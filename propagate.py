@@ -17,7 +17,7 @@ prop_mu_minus = pp.Propagator(particle_def=mu_minus_def, config_file="./config.j
 mu_plus_def = pp.particle.MuPlusDef()
 prop_mu_plus = pp.Propagator(particle_def=mu_plus_def, config_file="./config.json")
 
-s = LWpy.read_stream('./config_DUNE.lic')
+s = LWpy.read_stream('./injected/config_DUNE.lic')
 blocks = s.read()
 earth_model_params = [
     "DUNE",
@@ -41,7 +41,7 @@ for block in blocks:
         raise ValueError("Unrecognized block! " + block_name)
     generators.append(gen)
 
-data_file = h5.File("data_output_DUNE.h5")
+data_file = h5.File("./injected/data_output_DUNE.h5")
 injector_list = [i for i in data_file.keys()]
 props = None
 mu_props = None
@@ -237,7 +237,7 @@ def save_entries():
         'injector_count': injector_count.tolist(),
         }
 
-    f = open('propagated.json', 'w')
+    f = open('./propagated/propagated.json', 'w')
     json.dump(data, f)
     f.close()
 
@@ -266,6 +266,8 @@ for i in tqdm(range(len(props)), total=len(props)):
         else:
             entries.append(entry)
             entries_mask.append(True)
+        del particles
+        del secondaries
 
     if i % 50000 == 0:
         save_entries()
