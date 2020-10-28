@@ -28,11 +28,12 @@ import json
 import sim_tools
 import functools
 
-outdir = './plots/oscillations/'
+outdir = './plots/conv_sin22th_0p1_dm2_4p5/'
 
 units = nsq.Const()
 conv = nsq.nuSQUIDSAtm("./fluxes/conv.h5")
-conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p1.h5")
+#conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p1.h5")
+conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p1_dm2_4p5.h5")
 
 data = json.load(open('./weighted/weighted.json', 'r'))
 energy = np.array(data["energy"])
@@ -151,8 +152,8 @@ data["entry_distance"] = entry_distance
 
 props = data
 
-energy_bins = np.logspace(1, 5, 40+1)
-zenith_bins = np.arccos(np.linspace(-1,0,20+1))[::-1]
+energy_bins = np.logspace(1, 5, 12+1)
+zenith_bins = np.arccos(np.linspace(-1,0,5+1))[::-1]
 
 diff_expect = np.empty((len(energy_bins)-1, len(zenith_bins)-1))
 standard_expect = np.empty((len(energy_bins)-1, len(zenith_bins)-1))
@@ -358,7 +359,7 @@ livetime = 365.25 * 24 * 3600
 weights = flux_standard * livetime / gen_prob
 standard_weights = flux_standard * livetime / gen_prob
 sterile_weights = flux_sterile * livetime / gen_prob
-
+"""
 def print_stats(name, v, z):
     m0 = np.cos(z) < 0
     m1 = np.cos(z) > 0
@@ -421,7 +422,7 @@ def print_stats(name):
 keys = sorted(props.dtype.names)
 for k in keys:
     print_stats(k)
-
+"""
 cut_mask = np.ones(len(energy)).astype(bool)
 #cut_mask = track_length > 2
 #cut_mask = np.logical_and(cut_mask, entry_energy > 100)
@@ -445,21 +446,20 @@ vup_mask = np.cos(zenith) < -0.8
 starting_contained_mask = np.logical_or(np.logical_or(morphology == 1, morphology == 4), morphology == 5)
 red = lambda x: functools.reduce(np.logical_and, x)
 
-energy_bins = np.logspace(-1, 5, 60+1)
-zenith_bins = np.arccos(np.linspace(-1,0,20+1))[::-1]
+energy_bins = np.logspace(-1, 5, 18+1)
+zenith_bins = np.arccos(np.linspace(-1,0,5+1))[::-1]
 
 masks = common.get_bin_masks(energy, zenith, energy_bins, zenith_bins)
 
 standard_expect = np.array([np.sum(standard_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
 sterile_expect = np.array([np.sum(sterile_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
-#norm = matplotlib.colors.LogNorm()
-
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
 ex = standard_expect-sterile_expect
+amin, amax = common.color_bounds([ex], pos=True, logsnap=True, lower_alpha=0.95)
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
 mesh = ax.pcolormesh(X,Y,ex, cmap=cm, norm=norm)
 ax.set_yscale('log')
 ax.set_ylim((1e2, 1e5))
@@ -479,8 +479,34 @@ fig.savefig(outdir + 'neutrino_deficit_dist.png', dpi=200)
 fig.clf()
 plt.close(fig)
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
-#norm = matplotlib.colors.LogNorm()
+norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=1, clip=False)
+
+fig, ax = plt.subplots(figsize=(7,5))
+X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
+Y = np.array([energy_bins]*(len(zenith_bins))).T
+ex = (standard_expect - sterile_expect) / standard_expect
+mesh = ax.pcolormesh(X,Y,ex, cmap=cm, norm=norm)
+ax.set_yscale('log')
+ax.set_ylim((1e2, 1e5))
+#ax.set_xlim((-1,1))
+ax.set_ylabel('Neutrino Energy [GeV]')
+ax.set_xlabel(r'Neutrino $\cos\left(\theta_z\right)$')
+cb = fig.colorbar(mesh, ax=ax)
+cb.ax.set_ylabel('Fractional deficit per year per module')
+cb.ax.minorticks_on()
+plt.tight_layout()
+font = FontProperties()
+font.set_size('medium')
+font.set_family('sans-serif')
+font.set_weight('bold')
+fig.savefig(outdir + 'neutrino_frac_deficit_dist.pdf')
+fig.savefig(outdir + 'neutrino_frac_deficit_dist.png', dpi=200)
+fig.clf()
+plt.close(fig)
+
+amin, amax = common.color_bounds([standard_expect, sterile_expect], pos=True, logsnap=True, lower_alpha=0.95)
+
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
@@ -503,8 +529,7 @@ fig.savefig(outdir + 'neutrino_standard_dist.png', dpi=200)
 fig.clf()
 plt.close(fig)
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
-#norm = matplotlib.colors.LogNorm()
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
@@ -559,13 +584,13 @@ masks = common.get_bin_masks(muon_start_energy, muon_start_zenith, energy_bins, 
 standard_expect = np.array([np.sum(standard_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
 sterile_expect = np.array([np.sum(sterile_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
-#norm = matplotlib.colors.LogNorm()
-
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
-mesh = ax.pcolormesh(X,Y,standard_expect-sterile_expect, cmap=cm, norm=norm)
+ex = standard_expect-sterile_expect
+amin, amax = common.color_bounds([ex], pos=True, logsnap=True, lower_alpha=0.95)
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
+mesh = ax.pcolormesh(X,Y,ex, cmap=cm, norm=norm)
 ax.set_yscale('log')
 #ax.set_ylim((1e2, 1e5))
 #ax.set_xlim((-1,1))
@@ -584,7 +609,43 @@ fig.savefig(outdir + 'muon_deficit_dist.png', dpi=200)
 fig.clf()
 plt.close(fig)
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
+norm = matplotlib.colors.LogNorm(vmin=1e-4, vmax=1, clip=False)
+#norm = matplotlib.colors.LogNorm()
+
+fig, ax = plt.subplots(figsize=(7,5))
+X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
+Y = np.array([energy_bins]*(len(zenith_bins))).T
+
+ex = (standard_expect-sterile_expect) / standard_expect
+k = sterile_expect
+l = standard_expect
+k *= 8
+l *= 8
+pois = l - k*np.log(l) + scipy.special.gammaln(k)
+pois_data = k - k*np.log(k) + scipy.special.gammaln(k)
+print("DeltaChi2", np.sum(pois-pois_data))
+mesh = ax.pcolormesh(X,Y,pois-pois_data, cmap=cm, norm=norm)
+ax.set_yscale('log')
+#ax.set_ylim((1e2, 1e5))
+#ax.set_xlim((-1,1))
+ax.set_ylabel('Muon energy at detector [GeV]')
+ax.set_xlabel(r'Muon $\cos\left(\theta_z\right)$')
+cb = fig.colorbar(mesh, ax=ax)
+cb.ax.set_ylabel('Reduced negative LLH')
+cb.ax.minorticks_on()
+plt.tight_layout()
+font = FontProperties()
+font.set_size('medium')
+font.set_family('sans-serif')
+font.set_weight('bold')
+fig.savefig(outdir + 'muon_pois_dist.pdf')
+fig.savefig(outdir + 'muon_pois_dist.png', dpi=200)
+fig.clf()
+plt.close(fig)
+
+amin, amax = common.color_bounds([standard_expect, sterile_expect], pos=True, logsnap=True, lower_alpha=0.95)
+
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
@@ -607,7 +668,7 @@ fig.savefig(outdir + 'muon_standard_dist.png', dpi=200)
 fig.clf()
 plt.close(fig)
 
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=2, clip=False)
+norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
