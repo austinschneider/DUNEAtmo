@@ -385,3 +385,23 @@ def chunk(items, chunks, chunk_number):
             return scan_results
         items = items[n0:n1]
     return items
+
+def color_bounds(arrays, lower_alpha=0.95, logsnap=False, pos=False):
+    amin = np.inf
+    amax = -np.inf
+    for ar in arrays:
+        ar = ar.flat
+        if pos:
+            ar = ar[ar>0]
+        sar = np.sort(ar)[::-1]
+        cdf = np.cumsum(sar)/np.sum(sar)
+        i = np.arange(len(sar))[cdf >= lower_alpha][0]
+        armin = sar[i]
+        armax = np.amax(ar)
+
+        amin = min(armin, amin)
+        amax = max(armax, amax)
+    if logsnap:
+        amin = 10**(np.floor(np.log10(amin)*10.)/10.)
+        amax = 10**(np.ceil(np.log10(amax)*10.)/10.)
+    return amin, amax
