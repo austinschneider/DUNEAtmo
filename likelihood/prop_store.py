@@ -8,7 +8,7 @@ class memodict_(collections.OrderedDict):
         collections.OrderedDict.__init__(self)
         self.f = f
         self.maxsize = maxsize
-    def __getitem__(self, key, extra):
+    def __getitem__(self, key, extra=None):
         if super().__contains__(key):
             return super().__getitem__(key)
         if len(self) == self.maxsize:
