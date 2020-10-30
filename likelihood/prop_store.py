@@ -94,6 +94,10 @@ class store:
         self.props[name] = prop
         self.cache_sizes[name] = cache_size
 
+    def reset_cache(self, props):
+        for prop in props:
+            self.initialized_props[prop].clear()
+
     def initialize(self, keep_cache=False):
         old_initialized_props = self.initialized_props
         if not keep_cache:
@@ -125,14 +129,9 @@ class store:
             del old_initialized_props
 
         def add_implicit_dependencies(prop):
-            print("Parent:", prop)
             initialized_entry = self.initialized_props[prop]
             if len(initialized_entry.implicit_physical_props) == 0:
                 prop_deps = set()
-                print("Children:")
-                for dprop in initialized_entry.props:
-                    print("\t" + dprop)
-
                 for dprop in initialized_entry.props:
                     add_implicit_dependencies(dprop)
                     prop_deps |= set(self.initialized_props[dprop].physical_props)
