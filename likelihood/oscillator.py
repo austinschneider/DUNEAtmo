@@ -130,13 +130,13 @@ class oscillator:
                 cz = self.czbins[ci]
                 for ei in range(len(self.ebins)):
                     e = self.ebins[ei]
-                    init_state[ci][ei][0][0] = flux.getFlux(nuflux.NuE, e/units.GeV, cz)
-                    init_state[ci][ei][0][1] = flux.getFlux(nuflux.NuMu, e/units.GeV, cz)
-                    init_state[ci][ei][0][2] = flux.getFlux(nuflux.NuTau, e/units.GeV, cz)
+                    init_state[ci][ei][0][0] = self.flux.getFlux(nuflux.NuE, e/units.GeV, cz)
+                    init_state[ci][ei][0][1] = self.flux.getFlux(nuflux.NuMu, e/units.GeV, cz)
+                    init_state[ci][ei][0][2] = self.flux.getFlux(nuflux.NuTau, e/units.GeV, cz)
 
-                    init_state[ci][ei][1][0] = flux.getFlux(nuflux.NuEBar, e/units.GeV, cz)
-                    init_state[ci][ei][1][1] = flux.getFlux(nuflux.NuMuBar, e/units.GeV, cz)
-                    init_state[ci][ei][1][2] = flux.getFlux(nuflux.NuTauBar, e/units.GeV, cz)
+                    init_state[ci][ei][1][0] = self.flux.getFlux(nuflux.NuEBar, e/units.GeV, cz)
+                    init_state[ci][ei][1][1] = self.flux.getFlux(nuflux.NuMuBar, e/units.GeV, cz)
+                    init_state[ci][ei][1][2] = self.flux.getFlux(nuflux.NuTauBar, e/units.GeV, cz)
 
                     init_state[ci][ei][0][3] = 0.
                     init_state[ci][ei][1][3] = 0.
