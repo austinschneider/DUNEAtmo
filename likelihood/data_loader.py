@@ -1,6 +1,5 @@
 import numpy as np
 import json
-import sim_tools
 
 def load_data(fname='./weighted/weighted.json'):
     data = json.load(open(fname, 'r'))
@@ -36,7 +35,7 @@ def load_data(fname='./weighted/weighted.json'):
     exit_zenith = np.pi - np.array(data["exit_zenith"])
     exit_azimuth = 2.*np.pi - np.array(data["exit_azimuth"])
     track_length = np.array(data["track_length"])
-    morphology = np.array([sim_tools.EventMorphology(m) for m in data["morphology"]])
+    morphology = np.array(data["morphology"])
     deposited_energy = np.array(data["deposited_energy"])
     entry_distance = np.sqrt((entry_x - x)**2 + (entry_y - y)**2 + (entry_z - z)**2)
     injector_count = np.array(data["injector_count"]).astype(int)[::-1]
