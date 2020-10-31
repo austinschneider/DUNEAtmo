@@ -55,6 +55,10 @@ def load_data(fname='./weighted/weighted.json'):
     muon_zenith = np.pi - np.arccos(muon_nz)
     muon_azimuth = 2.*np.pi - np.arctan2(muon_ny, muon_nx)
 
+    rand = np.random.default_rng(seed=2303)
+    factor = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=len(energy))
+    reco_energy = muon_start_energy * factor
+
     data = np.empty(len(energy), dtype=[
           ("energy", energy.dtype),
           ("zenith", zenith.dtype),
@@ -85,7 +89,7 @@ def load_data(fname='./weighted/weighted.json'):
           ("morphology", morphology.dtype),
           ("deposited_energy", deposited_energy.dtype),
           ("entry_distance", entry_distance.dtype),
-          ("recoEnergy", muon_start_energy.dtype),
+          ("recoEnergy", reco_energy.dtype),
           ("recoZenith", muon_start_zenith.dtype),
           ])
 
