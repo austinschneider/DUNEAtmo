@@ -89,6 +89,8 @@ def load_data(fname='./weighted/weighted.json'):
           ("morphology", morphology.dtype),
           ("deposited_energy", deposited_energy.dtype),
           ("entry_distance", entry_distance.dtype),
+          ("muon_start_energy", muon_start_energy.dtype),
+          ("muon_start_zenith", muon_start_zenith.dtype),
           ("recoEnergy", reco_energy.dtype),
           ("recoZenith", muon_start_zenith.dtype),
           ])
@@ -122,7 +124,9 @@ def load_data(fname='./weighted/weighted.json'):
     data["morphology"] = morphology
     data["deposited_energy"] = deposited_energy
     data["entry_distance"] = entry_distance
-    data["recoEnergy"] = muon_start_energy
+    data["muon_start_energy"] = muon_start_energy
+    data["muon_start_zenith"] = muon_start_zenith
+    data["recoEnergy"] = reco_energy
     data["recoZenith"] = muon_start_zenith
 
     return data
