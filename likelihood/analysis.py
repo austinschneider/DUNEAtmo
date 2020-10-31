@@ -24,44 +24,55 @@ osc = oscillator.oscillator(
 #
 # the_store = prop_store.store()
 #
+## The store computes values for you and caches the result so you don't compute anything twice.
 ## If you need a computed value, you go to the store:
 #
-# my_expensive_numbers = the_store.get_prop('expensive_numbers', physics_parameters)
+# my_expensive_numbers = the_store.get_prop("expensive_numbers", physics_parameters)
 #
 ## But first you have to tell the store how to do things.
-##  So you define a function:
+## So you define a function:
 #
-# def my_func(foo, bar):
+# def my_func(foo, bar, physics_param):
 #     ret = ...
 #     ... compute things ...
 #     return ret
 #
-## Register the function with the store:
-##  This requires a name for the output of the function,
-##  the ordered names of parameters it depends on,
-##  and the function itself.
+## Once defined, you must register the function with the store.
+## This requires a name for the output of the function,
+## the ordered names of parameters it depends on,
+## and the function itself.
 #
-# the_store.add_prop('my_value', ["value_of_foo", "value_of_bar"], my_func)
+# the_store.add_prop("my_value", ["value_of_foo", "value_of_bar", "physics_value"], my_func)
 #
-## Now you can register other functions that use the output of your other functions
+## Now you can register other functions that use the output and so on...
+#
 # def my_other_func(my_value):
 #     return (my_value + 1)/2.0
+# the_store.add_prop("my_other_value", ["my_value"], my_other_func)
 #
-## Just please don't define an infinite loop in this way...
+## This implicitly depends on "physics_value", but that is handled by the store.
+## Just please don't define an infinite loop via interdependency...
 #
-## Finally you have to initialize the store so it can work out the
-##  relationships between all of things you defined and spin up the object
-##  caches
+## Finally you have to initialize the store so it can work out the implicit dependencies of the
+## things you defined, figure out what the physics parameters are, and spin up the object caches
 #
 # the_store.initialize()
 #
-## If the store was already initialized and you want to keep the caches
+## If you are reinitializing the store after adding props and you want to keep the caches
+#
+# the_store.initialize(keep_cache=True)
+#
+## Now you can ask the store for values as long as you give it the appropriate physics parameters
+## It will work out all the details and try not to recompute anything if it can help it
+#
+# physics_parameters = {"physics_value": np.pi/4.}
+# value = the_store.get_prop("my_value", physics_parameters)
 
 
 the_store = prop_store.store()
 
 
-# How to load the mc with precomputed generation probabilities
+# How to load the MC with precomputed generation probabilities
 # This actually has the binning as well
 def load_mc():
     import data_loader
@@ -71,22 +82,16 @@ def load_mc():
     mc = data_loader.load_data("../weighted/weighted.json")
     mc, bin_slices = binning.bin_data(mc)
     return mc, bin_slices
-
-
 the_store.add_prop("sorted_mc", None, load_mc, cache_size=1)
 
-# Actually get just the mc
+# Actually get just the MC
 def get_mc(sorted_mc):
     return sorted_mc[0]
-
-
 the_store.add_prop("mc", ["sorted_mc"], get_mc, cache_size=1)
 
 # Just get the binning
 def get_binning(sorted_mc):
     return sorted_mc[1]
-
-
 the_store.add_prop("mc_binning", ["sorted_mc"], get_binning, cache_size=1)
 the_store.initialize()
 
@@ -95,7 +100,7 @@ the_store.initialize()
 mc = the_store.get_prop("mc")
 binning = the_store.get_prop("mc_binning")
 
-# Convenience aliases for the MC parameters
+# Produce an accessor function
 def get_mc_f(name):
     s = str(name)
 
@@ -104,20 +109,18 @@ def get_mc_f(name):
 
     return f
 
-
+# Convenience aliases for the MC parameters
+# Things like "mc_energy", "mc_zenith", etc. are registered with "mc" as a dependent
 for name in mc.dtype.names:
     s = str(name)
     f = get_mc_f(s)
     the_store.add_prop("mc_" + s, ["mc"], f, cache_size=1)
-# Now things like "mc_energy", "mc_zenith", etc. are registered with "mc" as a dependent
 
 # Convenience function for calling the nusquids flux repository
 # This nusquids repository does the 3+1 scenario, but the concept is easily extensible
 def nsq_flux(numnu, dm2, th14, th24, th34, cp):
     flux = osc[(numnu, dm2, th14, th24, th34, cp)]
     return flux
-
-
 the_store.add_prop("nsq_flux", ["numnu", "dm2", "th14", "th24", "th34", "cp"], nsq_flux)
 
 # How to get the flux for MC events from nusquids
@@ -166,66 +169,48 @@ the_store.add_prop(
 # Changing the conventional normalization
 def flux_conv(convNorm, conv_flux_tilt_corrected):
     return convNorm * conv_flux_tilt_corrected
-
-
 the_store.add_prop("flux_conv", ["convNorm", "conv_flux_tilt_corrected"], flux_conv)
 
 # Just the sample livetime
 def get_livetime():
     return 365.25 * 24 * 3600 * 9
-
-
 the_store.add_prop("livetime", None, get_livetime)
 
 # Combine the livetime and generation probability
 # We do this because neither will ever change
 def livetime_gen_prob(livetime, mc_gen_prob):
     return livetime / mc_gen_prob
-
-
 the_store.add_prop("livetime_gen_prob", ["livetime", "mc_gen_prob"], livetime_gen_prob)
 
 # Compute the weight of MC events
 def mc_weight(flux_conv, livetime_gen_prob):
     return flux_conv * livetime_gen_prob
-
-
 the_store.add_prop("mc_weight", ["flux_conv", "livetime_gen_prob"], mc_weight)
 
 # Bin the weights
 def binned_mc_weight(mc_weight, mc_binning):
     return [mc_weight[b] for b in mc_binning]
-
-
 the_store.add_prop("binned_mc_weight", ["mc_weight", "mc_binning"], binned_mc_weight)
 
 # Compute the MC expectation per bin
 def expect(binned_mc_weight):
     return [np.sum(w) for w in binned_mc_weight]
-
-
 the_store.add_prop("expect", ["binned_mc_weight"], expect)
 
 # Compute the MC square expectation per bin
 def expect_sq(binned_mc_weight):
     return [np.sum(w ** 2) for w in binned_mc_weight]
-
-
 the_store.add_prop("expect_sq", ["binned_mc_weight"], expect_sq)
 
 # Compute the weights for an asimov dataset
 # This is kept separate so that it has its own cache
 def asimov_data(mc_weight):
     return mc_weight
-
-
 the_store.add_prop("asimov_data", ["mc_weight"], asimov_data)
 
 
 def binned_asimov_data(asimov_data, mc_binning):
     return [asimov_data[b] for b in mc_binning]
-
-
 the_store.add_prop(
     "binned_asimov_data", ["asimov_data", "mc_binning"], binned_asimov_data
 )
@@ -233,15 +218,11 @@ the_store.add_prop(
 
 def asimov_expect(binned_asimov_data):
     return [np.sum(w) for w in binned_asimov_data]
-
-
 the_store.add_prop("asimov_expect", ["binned_asimov_data"], asimov_expect)
 
 
 def asimov_expect_sq(binned_asimov_data):
     return [np.sum(w ** 2) for w in binned_asimov_data]
-
-
 the_store.add_prop("asimov_expect_sq", ["binned_asimov_data"], asimov_expect_sq)
 
 # Spin up the caches
@@ -249,7 +230,6 @@ the_store.initialize(keep_cache=True)
 
 # Now we can define the likelihood
 # For now we are ignoring the fact that we could have data (asimov only)
-
 
 def asimov_binned_likelihood(parameters, asimov_parameters):
     asimov_expect = the_store.get_prop("asimov_expect", asimov_parameters)
