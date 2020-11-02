@@ -7,10 +7,10 @@ def get_bins(
     ebins  = 18,
     tg_czmin  = -1,
     tg_czmax  = 0,
-    tg_czbins = 5,
+    tg_czbins = 10,
     start_czmin  = -1,
     start_czmax  = 1,
-    start_czbins = 10,
+    start_czbins = 20,
 ):
     """
     Get the analysis bins.
