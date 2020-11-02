@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import functools
 
 def load_data(fname='./weighted/weighted.json'):
     data = json.load(open(fname, 'r'))
@@ -56,8 +57,14 @@ def load_data(fname='./weighted/weighted.json'):
     muon_azimuth = 2.*np.pi - np.arctan2(muon_ny, muon_nx)
 
     rand = np.random.default_rng(seed=2303)
-    factor = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=len(energy))
-    reco_energy = muon_start_energy * factor
+    mask_0 = morphology == 3
+    mask_1 = functools.reduce(np.logical_or, [morphology == 1, morphology == 4, morphology == 5])
+    #factor_0 = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=np.sum(mask_0))
+    factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(2.0)) + abs(np.log10(0.5)))/2., size=np.sum(mask_0))
+    factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.3)) + abs(np.log10(0.7)))/2., size=np.sum(mask_1))
+    reco_energy = np.empty(energy.shape)
+    reco_energy[mask_0] = muon_start_energy[mask_0] * factor_0
+    reco_energy[mask_1] = energy[mask_1] * factor_1
 
     data = np.empty(len(energy), dtype=[
           ("energy", energy.dtype),
