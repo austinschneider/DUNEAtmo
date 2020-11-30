@@ -78,9 +78,9 @@ int main(void){
             gamma,
             minAzimuth, maxAzimuth,
             minZenith, maxZenith,
-            30.*LeptonInjector::Constants::m, // injection radius
-            30.*LeptonInjector::Constants::m, // injection length
-            30.*LeptonInjector::Constants::m, // cylinder radius
+            32.*LeptonInjector::Constants::m, // injection radius
+            32.*LeptonInjector::Constants::m, // injection length
+            32.*LeptonInjector::Constants::m, // cylinder radius
             20.*LeptonInjector::Constants::m); // cylinder height
 
 
