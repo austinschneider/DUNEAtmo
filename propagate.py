@@ -98,7 +98,7 @@ def make_p(p, mu_p):
     return p
 
 geo_det_single = []
-geo_det_single.append(pp.geometry.Box(pp.Vector3D(), 12, 58, 12))
+geo_det_single.append(pp.geometry.Box(pp.Vector3D(), 13.9, 58.1, 11.9))
 
 geo_det_double = []
 geo_det_double.append(pp.geometry.Box(pp.Vector3D(12, 0, 0), 12, 58, 12))
@@ -118,7 +118,7 @@ geo_det_quad.append(pp.geometry.Box(pp.Vector3D(-36, 0, 0), 12, 58, 12))
 
 det_geos = [geo_det_single, geo_det_double, geo_det_triple, geo_det_quad]
 geo = geo_det_single[0]
-geo_epsilon = pp.geometry.Box(pp.Vector3D(), 12+1, 58+1, 12+1)
+geo_epsilon = pp.geometry.Box(pp.Vector3D(), 14, 58.2, 12)
 
 min_energy = 0.2e3
 
