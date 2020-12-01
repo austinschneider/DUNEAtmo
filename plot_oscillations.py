@@ -28,12 +28,12 @@ import json
 import sim_tools
 import functools
 
-outdir = './plots/conv_sin22th_0p1_dm2_4p5/'
+outdir = './plots/conv_sin22th_0p02_dm2_p15/'
 
 units = nsq.Const()
 conv = nsq.nuSQUIDSAtm("./fluxes/conv.h5")
 #conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p1.h5")
-conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p1_dm2_4p5.h5")
+conv_sterile = nsq.nuSQUIDSAtm("./fluxes/conv_sin22th_0p02_dm2_p15.h5")
 
 data = json.load(open('./weighted/weighted.json', 'r'))
 energy = np.array(data["energy"])
@@ -452,7 +452,9 @@ zenith_bins = np.arccos(np.linspace(-1,0,5+1))[::-1]
 masks = common.get_bin_masks(energy, zenith, energy_bins, zenith_bins)
 
 standard_expect = np.array([np.sum(standard_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
+print('Standard expectation:', np.sum(standard_expect))
 sterile_expect = np.array([np.sum(sterile_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
+print('Sterile expectation:', np.sum(sterile_expect))
 
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
@@ -460,6 +462,7 @@ Y = np.array([energy_bins]*(len(zenith_bins))).T
 ex = standard_expect-sterile_expect
 amin, amax = common.color_bounds([ex], pos=True, logsnap=True, lower_alpha=0.95)
 norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
+norm = matplotlib.colors.LogNorm()
 mesh = ax.pcolormesh(X,Y,ex, cmap=cm, norm=norm)
 ax.set_yscale('log')
 ax.set_ylim((1e2, 1e5))
@@ -507,9 +510,11 @@ plt.close(fig)
 amin, amax = common.color_bounds([standard_expect, sterile_expect], pos=True, logsnap=True, lower_alpha=0.95)
 
 norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
+norm = matplotlib.colors.LogNorm()
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
+print('Standard expectation:', np.sum(standard_expect))
 mesh = ax.pcolormesh(X,Y,standard_expect, cmap=cm, norm=norm)
 ax.set_yscale('log')
 ax.set_ylim((1e2, 1e5))
@@ -582,7 +587,9 @@ plt.close(fig)
 masks = common.get_bin_masks(muon_start_energy, muon_start_zenith, energy_bins, zenith_bins)
 
 standard_expect = np.array([np.sum(standard_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
+print('Standard expectation:', np.sum(standard_expect))
 sterile_expect = np.array([np.sum(sterile_weights[m]) for m in masks]).reshape((len(zenith_bins)-1, len(energy_bins)-1)).T
+print('Sterile expectation:', np.sum(sterile_expect))
 
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
@@ -590,6 +597,8 @@ Y = np.array([energy_bins]*(len(zenith_bins))).T
 ex = standard_expect-sterile_expect
 amin, amax = common.color_bounds([ex], pos=True, logsnap=True, lower_alpha=0.95)
 norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
+print('Muon deficit over threshold:', np.sum([x for x in ex.flat if x > amin]))
+norm = matplotlib.colors.LogNorm()
 mesh = ax.pcolormesh(X,Y,ex, cmap=cm, norm=norm)
 ax.set_yscale('log')
 #ax.set_ylim((1e2, 1e5))
@@ -618,7 +627,7 @@ Y = np.array([energy_bins]*(len(zenith_bins))).T
 
 ex = (standard_expect-sterile_expect) / standard_expect
 k = sterile_expect
-l = standard_expect
+l = np.array(standard_expect)
 k *= 8
 l *= 8
 pois = l - k*np.log(l) + scipy.special.gammaln(k)
@@ -646,10 +655,12 @@ plt.close(fig)
 amin, amax = common.color_bounds([standard_expect, sterile_expect], pos=True, logsnap=True, lower_alpha=0.95)
 
 norm = matplotlib.colors.LogNorm(vmin=amin, vmax=amax, clip=True)
+norm = matplotlib.colors.LogNorm()
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.cos(np.array([zenith_bins]*(len(energy_bins))))
 Y = np.array([energy_bins]*(len(zenith_bins))).T
 mesh = ax.pcolormesh(X,Y,standard_expect, cmap=cm, norm=norm)
+print('Standard expectation:', np.sum(standard_expect))
 ax.set_yscale('log')
 #ax.set_ylim((1e2, 1e5))
 #ax.set_xlim((-1,1))

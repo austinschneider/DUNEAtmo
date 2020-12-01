@@ -250,10 +250,22 @@ for m in np.unique(morphology):
     print("Expect", np.sum(weights[np.logical_and(cut_mask, m_mask)]), m, "events per year!")
 print()
 
-print("Without cuts:")
+print("Upgoing without cuts:")
 for m in np.unique(morphology):
     m_mask = morphology == m
     print("Expect", np.sum(weights[np.logical_and(zenith > np.pi/2., m_mask)]), m, "events per year!")
+print()
+
+print("Upgoing over 100 GeV:")
+for m in np.unique(morphology):
+    m_mask = morphology == m
+    print("Expect", np.sum(weights[np.logical_and(np.logical_and(zenith > np.pi/2., m_mask), muon_start_energy > 100.)]), m, "events per year!")
+print()
+
+print("Without cuts:")
+for m in np.unique(morphology):
+    m_mask = morphology == m
+    print("Expect", np.sum(weights[m_mask]), m, "events per year!")
 print()
 #weights = weights[cut_mask]
 """
@@ -562,14 +574,16 @@ fig.savefig(outdir + 'muon_energy_length.png', dpi=200)
 fig.clf()
 plt.close(fig)
 
-length_bins = np.logspace(-3, 3, 20+1)
+length_bins = np.logspace(-3, 3, 30+1)
+energy_bins = np.logspace(-3, 2, 25+1)
 masks = common.get_bin_masks(deposited_energy, track_length, energy_bins, length_bins)
 
-expect = np.array([np.sum(weights[m]) for m in masks]).reshape((len(length_bins)-1, len(energy_bins)-1)).T
+low_e_mask = np.logical_and(muon_start_energy <= 120, muon_start_energy >= 100)
+expect = np.array([np.sum(weights[np.logical_and(m, low_e_mask)]) for m in masks]).reshape((len(length_bins)-1, len(energy_bins)-1)).T
 
 m = np.max(expect)
 mm = np.min(expect[expect>0])
-norm = matplotlib.colors.LogNorm(vmin=1e-3, vmax=10, clip=False)
+norm = matplotlib.colors.LogNorm(vmin=mm, vmax=m, clip=False)
 
 fig, ax = plt.subplots(figsize=(7,5))
 X = np.array([length_bins]*(len(energy_bins)))
@@ -584,11 +598,8 @@ ax.set_xlabel(r'Path length in detector [m]')
 cb = fig.colorbar(mesh, ax=ax)
 cb.ax.set_ylabel('Events per year per module')
 cb.ax.minorticks_off()
+ax.set_title('Muons between 100GeV and 120GeV at the module')
 plt.tight_layout()
-font = FontProperties()
-font.set_size('medium')
-font.set_family('sans-serif')
-font.set_weight('bold')
 fig.savefig(outdir + 'muon_dep_energy_length.pdf')
 fig.savefig(outdir + 'muon_dep_energy_length.png', dpi=200)
 fig.clf()

@@ -88,12 +88,12 @@ cp = 0.
 #nus_atm.EvolveState()
 #nus_atm.WriteStateHDF5('./fluxes/conv.h5', True)
 
-dm2 = 4.5
+dm2 = 0.15
 th14 = 0.
-th24 = np.arcsin(np.sqrt(0.1))/2.
+th24 = np.arcsin(np.sqrt(0.02))/2.
 th34 = 0.0
 cp = 0.
 
 nus_atm = get_nusquids_obj(4, dm2, th14, th24, th34, cp, flux)
 nus_atm.EvolveState()
-nus_atm.WriteStateHDF5('./fluxes/conv_sin22th_0p1_dm2_4p5.h5', True)
+nus_atm.WriteStateHDF5('./fluxes/conv_sin22th_0p02_dm2_p15.h5', True)
