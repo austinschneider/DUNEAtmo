@@ -81,7 +81,15 @@ def setup_sterile_analysis():
 
         print("Loading the mc")
         mc = data_loader.load_data("../weighted/weighted.json")
-        mc, bin_slices = binning.bin_data(mc)
+        tg_emin = 1e2,
+        tg_emax = 1e5,
+        start_emin = 1e2,
+        start_emax = 1e5,
+        tg_ebins = 30
+        start_ebins = 30
+        tg_czbins = 20
+        start_czbins = 40
+        mc, bin_slices = binning.bin_data(mc, tg_ebins=tg_ebins, start_ebins=start_ebins, tg_czbins=tg_czbins, start_czbins=start_czbins, tg_emin=tg_emin, tg_emax=tg_emax, start_emin=start_emin, start_emax=start_emax)
         return mc, bin_slices
     the_store.add_prop("sorted_mc", None, load_mc, cache_size=1)
 
@@ -136,7 +144,8 @@ def setup_sterile_analysis():
             if mc_particle_type[i] == 0:
                 print(i, mc_energy[i], mc_zenith[i], mc_particle_type[i])
             res[i] = flux.EvalFlavor(
-                int(flavor), float(np.cos(zenith)), float(energy * units.GeV), int(ptype)
+                int(flavor), float(np.cos(zenith)), float(energy * units.GeV), int(ptype),
+                True
             )
         return res
 
@@ -218,7 +227,9 @@ def setup_sterile_analysis():
 
 
     def asimov_expect(binned_asimov_data):
-        return [np.sum(w) for w in binned_asimov_data]
+        res = [np.sum(w) for w in binned_asimov_data]
+        print("Asimov expect:", np.sum(res))
+        return res
     the_store.add_prop("asimov_expect", ["binned_asimov_data"], asimov_expect)
 
 

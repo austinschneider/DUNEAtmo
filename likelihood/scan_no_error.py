@@ -22,8 +22,7 @@ dm2_grid = np.logspace(-1, 1, 10*2+1)
 th14 = 0.0
 s22th24_grid = np.logspace(-2, 0, 10*2+1)
 th24_grid = np.arcsin(np.sqrt(s22th24_grid)) / 2.0
-s22th34_grid = np.logspace(-2, 0, 10*2+1)
-th34_grid = np.arcsin(np.sqrt(s22th34_grid)) / 2.0
+th34 = 0.0
 cp = 0.0
 
 asimov_expect = the_store.get_prop("asimov_expect", asimov_params)
@@ -51,7 +50,7 @@ def eval_priors(params, priors):
 
 priors = [
         (1.0, 0.05, 0.0, np.inf), # convNorm prior
-        (0.0, 0.01, -np.inf, np.inf), # CRDeltaGamma prior
+        (0.0, 0.05, -np.inf, np.inf), # CRDeltaGamma prior
         ]
 
 entries = []
@@ -65,17 +64,17 @@ def f(x):
     physical_params.update(p)
     prior = eval_priors((convNorm, CRDeltaGamma), priors)
     if np.isinf(prior):
-        return prior
+        return -prior
     else:
         return -(prior + asimov_likelihood(physical_params))
-res = scipy.optimize.minimize(f, [1.0, 0.0], bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-18})
-convNorm, CRDeltaGamma = res.x
-llh = res.fun
+#res = scipy.optimize.minimize(f, [1.0, 0.0], bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-18})
+
+convNorm, CRDeltaGamma = [1.0, 0.0]
+llh = f([1.0, 0.0])
 entry = {
         "llh": llh,
         "dm2": 0,
         "th24": 0,
-        "th34": 0,
         "convNorm": convNorm,
         "CRDeltaGamma": CRDeltaGamma,
         }
@@ -91,16 +90,14 @@ print()
 pairs = []
 for dm2 in dm2_grid:
     for th24 in th24_grid:
-        for th34 in th34_grid:
-            pairs.append((dm2, th24, th34))
+        pairs.append((dm2, th24))
 order = np.arange(len(pairs))
 np.random.shuffle(order)
 for i in order:
-    dm2, th24, th34 = pairs[i]
+    dm2, th24 = pairs[i]
     print("Setting up fit:")
     print("\tdm2  =", dm2)
     print("\tth24 =", th24)
-    print("\tth34 =", th34)
     physical_params = {
         "numnu": 4,
         "dm2": dm2,
@@ -117,29 +114,28 @@ for i in order:
         physical_params.update(p)
         prior = eval_priors((convNorm, CRDeltaGamma), priors)
         if np.isinf(prior):
-            return -prior
+            return prior
         else:
             return -(prior + asimov_likelihood(physical_params))
-    res = scipy.optimize.minimize(f, [1.0, 0.0], bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-18})
-    convNorm, CRDeltaGamma = res.x
-    llh = res.fun
+    #res = scipy.optimize.minimize(f, [1.0, 0.0], bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-18})
+    convNorm, CRDeltaGamma = [1.0, 0.0]
+    llh = f([1.0, 0.0])
     entry = {
             "llh": llh,
             "dm2": dm2,
             "th24": th24,
-            "th34": th34,
             "convNorm": convNorm,
             "CRDeltaGamma": CRDeltaGamma,
             }
     entries.append(entry)
-    json_file = open("sterile_scan.json", "w")
+    json_file = open("sterile_scan_no_errors.json", "w")
     json.dump(entries, json_file)
     json_file.close()
     print("\tfit convNorm     =", convNorm)
     print("\tfit CRDeltaGamma =", CRDeltaGamma)
     print("\tLLH =", llh)
     print()
-json_file = open("sterile_scan.json", "w")
+json_file = open("sterile_scan_no_errors.json", "w")
 json.dump(entries, json_file)
 json_file.close()
 

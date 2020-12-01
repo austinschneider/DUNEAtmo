@@ -22,8 +22,7 @@ dm2_grid = np.logspace(-1, 1, 10*2+1)
 th14 = 0.0
 s22th24_grid = np.logspace(-2, 0, 10*2+1)
 th24_grid = np.arcsin(np.sqrt(s22th24_grid)) / 2.0
-s22th34_grid = np.logspace(-2, 0, 10*2+1)
-th34_grid = np.arcsin(np.sqrt(s22th34_grid)) / 2.0
+th34 = 0.0
 cp = 0.0
 
 asimov_expect = the_store.get_prop("asimov_expect", asimov_params)
@@ -80,7 +79,7 @@ entry = {
         "CRDeltaGamma": CRDeltaGamma,
         }
 entries.append(entry)
-json_file = open("sterile_scan.json", "w")
+json_file = open("sterile_scan_2d.json", "w")
 json.dump(entries, json_file)
 json_file.close()
 print("\tfit convNorm     =", convNorm)
@@ -91,16 +90,14 @@ print()
 pairs = []
 for dm2 in dm2_grid:
     for th24 in th24_grid:
-        for th34 in th34_grid:
-            pairs.append((dm2, th24, th34))
+        pairs.append((dm2, th24))
 order = np.arange(len(pairs))
 np.random.shuffle(order)
 for i in order:
-    dm2, th24, th34 = pairs[i]
+    dm2, th24 = pairs[i]
     print("Setting up fit:")
     print("\tdm2  =", dm2)
     print("\tth24 =", th24)
-    print("\tth34 =", th34)
     physical_params = {
         "numnu": 4,
         "dm2": dm2,
@@ -132,14 +129,14 @@ for i in order:
             "CRDeltaGamma": CRDeltaGamma,
             }
     entries.append(entry)
-    json_file = open("sterile_scan.json", "w")
+    json_file = open("sterile_scan_2d.json", "w")
     json.dump(entries, json_file)
     json_file.close()
     print("\tfit convNorm     =", convNorm)
     print("\tfit CRDeltaGamma =", CRDeltaGamma)
     print("\tLLH =", llh)
     print()
-json_file = open("sterile_scan.json", "w")
+json_file = open("sterile_scan_2d.json", "w")
 json.dump(entries, json_file)
 json_file.close()
 

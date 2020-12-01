@@ -30,7 +30,8 @@ def gammaPriorPoissonLikelihood(k, alpha, beta):
         -(k + alpha) * np.log1p(beta),
         -sp.special.loggamma(alpha).real,
     ]
-    return np.sum(values, axis=0)
+    res = np.sum(values, axis=0)
+    return res
 
 
 def poissonLikelihood(k, weight_sum, weight_sq_sum):
@@ -51,7 +52,8 @@ def poissonLikelihood(k, weight_sum, weight_sq_sum):
         The log likelihood
     """
 
-    return sp.stats.poisson.logpmf(k, weight_sum)
+    res = sp.stats.poisson.logpmf(k, weight_sum)
+    return res
 
 
 def LEff(k, weight_sum, weight_sq_sum):
@@ -83,6 +85,7 @@ def LEff(k, weight_sum, weight_sq_sum):
     res = np.zeros(np.shape(weight_sum))
     bad_mask = np.logical_and(np.logical_or(weight_sum <= 0, weight_sq_sum < 0), k != 0)
     res[bad_mask] = -np.inf
+    res[bad_mask] = gammaPriorPoissonLikelihood(k[bad_mask], 1.0 + 1.0, 1e20)
 
     poisson_mask = weight_sq_sum == 0
     if np.any(poisson_mask):
@@ -101,4 +104,5 @@ def LEff(k, weight_sum, weight_sq_sum):
         beta = ws / wss
         L = gammaPriorPoissonLikelihood(kk, alpha, beta)
         res[good_mask] = L
+    assert(not np.any(np.isnan(res)))
     return res

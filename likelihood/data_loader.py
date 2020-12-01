@@ -60,8 +60,8 @@ def load_data(fname='./weighted/weighted.json'):
     mask_0 = morphology == 3
     mask_1 = functools.reduce(np.logical_or, [morphology == 1, morphology == 4, morphology == 5])
     #factor_0 = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=np.sum(mask_0))
-    factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(2.0)) + abs(np.log10(0.5)))/2., size=np.sum(mask_0))
-    factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.3)) + abs(np.log10(0.7)))/2., size=np.sum(mask_1))
+    factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.2)) + abs(np.log10(0.8)))/2., size=np.sum(mask_0))
+    factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.1)) + abs(np.log10(0.9)))/2., size=np.sum(mask_1))
     reco_energy = np.empty(energy.shape)
     reco_energy[mask_0] = muon_start_energy[mask_0] * factor_0
     reco_energy[mask_1] = energy[mask_1] * factor_1

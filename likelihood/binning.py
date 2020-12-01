@@ -2,9 +2,12 @@ import numpy as np
 import functools
 
 def get_bins(
-    emin   = 1e-1,
-    emax   = 1e5,
-    ebins  = 18,
+    tg_emin = 1e-1,
+    tg_emax = 1e5,
+    tg_ebins = 18,
+    start_emin = 1e-1,
+    start_emax = 1e5,
+    start_ebins = 18,
     tg_czmin  = -1,
     tg_czmax  = 0,
     tg_czbins = 10,
@@ -16,14 +19,15 @@ def get_bins(
     Get the analysis bins.
     Using argument defaults will return the default analysis binning used in the paper
     """
-    energy_bins = np.logspace(np.log10(emin), np.log10(emax), ebins+1)
+    tg_energy_bins = np.logspace(np.log10(tg_emin), np.log10(tg_emax), tg_ebins+1)
+    start_energy_bins = np.logspace(np.log10(start_emin), np.log10(start_emax), start_ebins+1)
     tg_zenith_bins = np.arccos(np.linspace(tg_czmin, tg_czmax, tg_czbins+1))[::-1]
     start_zenith_bins = np.arccos(np.linspace(start_czmin, start_czmax, start_czbins+1))[::-1]
-    return energy_bins, tg_zenith_bins, start_zenith_bins
+    return tg_energy_bins, start_energy_bins, tg_zenith_bins, start_zenith_bins
 
 def get_bin_masks(
     morphology,
-    energy, zenith, energy_bins, through_going_zenith_bins, starting_zenith_bins,
+    energy, zenith, through_going_energy_bins, starting_energy_bins, through_going_zenith_bins, starting_zenith_bins,
 ):
     """
     Get masks for all analysis bins
@@ -62,13 +66,15 @@ def get_bin_masks(
         return bin_masks
 
     # Cascades are binned in energy and zenith
+    through_going_energy_bins = np.array(through_going_energy_bins.flatten())
     masks_0 = np.logical_and(
-        make_bin_masks(energy, zenith, energy_bins, through_going_zenith_bins), mask_0
+        make_bin_masks(energy, zenith, through_going_energy_bins, through_going_zenith_bins), mask_0
     )
 
     # Tracks are binned in energy and zenith
+    starting_energy_bins = np.array(starting_energy_bins.flatten())
     masks_1 = np.logical_and(
-        make_bin_masks(energy, zenith, energy_bins, starting_zenith_bins), mask_1
+        make_bin_masks(energy, zenith, starting_energy_bins, starting_zenith_bins), mask_1
     )
 
     return masks_0, masks_1
@@ -107,7 +113,7 @@ def sort_by_bin(data, masks):
     return sorted_data, bin_slices[:-1]
 
 
-def bin_data(data):
+def bin_data(data, **kwargs):
     """ Returns the data/MC events sorted by bins, and returns the bin slices for each bin
 
     Parameters
@@ -125,15 +131,16 @@ def bin_data(data):
     """
 
     # Get the bin edges
-    bins = get_bins()
-    energy_bins, tg_zenith_bins, start_zenith_bins = bins
+    bins = get_bins(**kwargs)
+    tg_energy_bins, start_energy_bins, tg_zenith_bins, start_zenith_bins = bins
 
     # Get the corresponding masks: data[mask] --> events in the bin corresponding to mask
     tg_masks, start_masks = get_bin_masks(
         data["morphology"],
         data["recoEnergy"],
         data["recoZenith"],
-        energy_bins,
+        tg_energy_bins,
+        start_energy_bins,
         tg_zenith_bins,
         start_zenith_bins,
     )
