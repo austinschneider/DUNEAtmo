@@ -1,5 +1,9 @@
+import sys
 import os
 import os.path
+base_path = os.environ['GOLEMSPACE']
+core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
+sys.path.insert(0, core_path)
 import collections
 import functools
 import numpy as np
