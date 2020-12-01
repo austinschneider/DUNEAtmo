@@ -126,7 +126,7 @@ def setup_lv_analysis():
         the_store.add_prop("mc_" + s, ["mc"], f, cache_size=1)
 
     # Convenience function for calling the nusquids flux repository
-    # This nusquids repository does the 3+1 scenario, but the concept is easily extensible
+    # This nusquids repository does the LV scenario, but the concept is easily extensible
     def nsq_flux(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im):
         flux = osc[(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im)]
         return flux
