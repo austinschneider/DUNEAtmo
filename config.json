@@ -139,8 +139,8 @@
 			{
 				"shape": "box",
 				"origin": [0, 0, 0],
-                "length": 84,
-                "width": 58,
+                "length": 14,
+                "width": 58.2,
                 "height": 12
 			},
 			"cuts_inside":
