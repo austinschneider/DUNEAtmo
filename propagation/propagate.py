@@ -1,3 +1,9 @@
+import sys
+import os
+import os.path
+base_path = os.environ['GOLEMSPACE']
+table_path = base_path + '/local/share/PROPOSAL/tables/'
+config_path = base_path + '/sources/DUNEAtmo/proposal_config/'
 import proposal as pp
 import numpy as np
 import h5py as h5
@@ -7,41 +13,34 @@ import json
 import sim_tools
 from tqdm import tqdm
 
+parser = argparse.ArgumentParser(description="Propagate muons")
+parser.add_argument('--config',
+        type=str,
+        dest='config',
+        default=config_path + 'config.json')
+parser.add_argument('--h5',
+        type=str,
+        dest='h5',
+        required=True
+        )
+parser.add_argument('--output',
+        type=str,
+        dest='output',
+        required=True
+        )
+args = parser.parse_args()
+
 interpolation_def = pp.InterpolationDef()
-interpolation_def.path_to_tables = "/home/austin/.local/share/PROPOSAL/tables"
-interpolation_def.path_to_tables_readonly = "/home/austin/.local/share/PROPOSAL/tables"
+interpolation_def.path_to_tables = table_path
+interpolation_def.path_to_tables_readonly = table_path
 
 mu_minus_def = pp.particle.MuMinusDef()
-prop_mu_minus = pp.Propagator(particle_def=mu_minus_def, config_file="./config.json")
+prop_mu_minus = pp.Propagator(particle_def=mu_minus_def, config_file=args.config)
 
 mu_plus_def = pp.particle.MuPlusDef()
-prop_mu_plus = pp.Propagator(particle_def=mu_plus_def, config_file="./config.json")
+prop_mu_plus = pp.Propagator(particle_def=mu_plus_def, config_file=args.config)
 
-s = LWpy.read_stream('./injected/config_DUNE.lic')
-blocks = s.read()
-earth_model_params = [
-    "DUNE",
-    "../LWpy/LWpy/resources/earthparams/",
-    ["PREM_dune"],
-    ["Standard"],
-    "NoIce",
-    20.0*LeptonInjector.Constants.degrees,
-    1480.0*LeptonInjector.Constants.m]
-
-generators = []
-for block in blocks:
-    block_name, block_version, _ = block
-    if block_name == 'EnumDef':
-        continue
-    elif block_name == 'VolumeInjectionConfiguration':
-        gen = LWpy.volume_generator(block)
-    elif block_name == 'RangedInjectionConfiguration':
-        gen = LWpy.ranged_generator(block, earth_model_params)
-    else:
-        raise ValueError("Unrecognized block! " + block_name)
-    generators.append(gen)
-
-data_file = h5.File("./injected/data_output_DUNE.h5")
+data_file = h5.File(args.h5, 'r')
 injector_list = [i for i in data_file.keys()]
 props = None
 mu_props = None
@@ -237,7 +236,7 @@ def save_entries():
         'injector_count': injector_count.tolist(),
         }
 
-    f = open('./propagated/propagated.json', 'w')
+    f = open(args.output, 'w')
     json.dump(data, f)
     f.close()
 
