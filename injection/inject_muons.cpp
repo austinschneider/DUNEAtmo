@@ -23,6 +23,38 @@ int main(int argc, char ** argv) {
             "Print help and exit", 0,
         },
         {
+            "output", {"--output"},
+            "Path and prefix for the output. Used for h5 and lic.", 1,
+        },
+        {
+            "dune_atmo_path", {"--dune-atmo-path"},
+            "Path to the DUNEAtmo source directory. Used for the injection cross section.", 0,
+        },
+        {
+            "lepton_injector_path", {"--li", "--li-path", "--lepton-injector-path"},
+            "Path to the lepton injector source directory. Used for earth model resources.", 0,
+        },
+        {
+            "earth_model", {"--earth-model", "--earth-density", "--earth-density-model"},
+            "Name of the earth density model.", 0
+        },
+        {
+            "materials_model", {"--materials-model", "--materials-density", "--materials-density-model"},
+            "Name of the materials density model.", 0,
+        },
+        {
+            "ice_type", {"--ice", "--ice-type"},
+            "The type of ice model.", 0,
+        },
+        {
+            "ice_angle", {"--ice-angle", "--ice-cap-angle"},
+            "Angle of the ice cap in degrees if it exists.", 0,
+        },
+        {
+            "depth", {"--depth", "--detector-depth"},
+            "Depth of the detector origin in meters.", 0,
+        },
+        {
             "minE", {"--min-energy", "--minE"},
             "The minimum injection energy in GeV", 0,
         },
@@ -223,6 +255,31 @@ int main(int argc, char ** argv) {
         return EXIT_SUCCESS;
     }
 
+    std::string output = args["output"].as<std::string>("./injected/output_DUNE");
+
+    std::string path;
+    if(args["lepton_injector_path"]) {
+        path = args["lepton_injector_path"].as<std::string>();
+    }
+    else {
+        if (const char* env_p = getenv("GOLEMSOURCEPATH")){
+            path = std::string( env_p ) + "/LeptonInjectorDUNE/";
+        }
+        else {
+            std::cerr << "WARNING no lepton injector path specified and GOLEMSOURCEPATH not set! Assuming earth model information is in ./resources/earthparams/" << std::endl;
+            path = "./";
+        }
+    }
+    if(path[-1] != '/')
+        path += "/";
+    path += "resources/earthparams/";
+
+    std::string earth_model = args["earth_model"].as<std::string>("PREM_dune");
+    std::string materials_model = args["materials_model"].as<std::string>("Standard");
+    std::string ice_type = args["ice_type"].as<std::string>("NoIce");
+    double ice_angle = args["ice_angle"].as<double>(20.);
+    double depth = args["depth"].as<double>(1480.);
+
     // define some parameters shared by the injectors
     int n_ranged_events = int(1e6);
     int n_volume_events = int(1e5);
@@ -233,10 +290,10 @@ int main(int argc, char ** argv) {
     double minE = args["minE"].as<double>(1e2)*LeptonInjector::Constants::GeV;
     double maxE = args["maxE"].as<double>(1e6)*LeptonInjector::Constants::GeV;
     double gamma = args["gamma"].as<double>(2.);
-    double minZenith = args["minZenith"].as<double>(0.);
-    double maxZenith = args["maxZenith"].as<double>(180.);
-    double minAzimuth = args["minAzimuth"].as<double>(0.);
-    double maxAzimuth = args["maxAzimuth"].as<double>(360.);
+    double minZenith = args["minZenith"].as<double>(0.)*LeptonInjector::Constants::degrees;
+    double maxZenith = args["maxZenith"].as<double>(180.)*LeptonInjector::Constants::degrees;
+    double minAzimuth = args["minAzimuth"].as<double>(0.)*LeptonInjector::Constants::degrees;
+    double maxAzimuth = args["maxAzimuth"].as<double>(360.)*LeptonInjector::Constants::degrees;
     double ranged_radius = args["ranged_radius"].as<double>(32)*LeptonInjector::Constants::m;
     double ranged_length = args["ranged_length"].as<double>(32)*LeptonInjector::Constants::m;
     double volume_radius = args["volume_radius"].as<double>(32)*LeptonInjector::Constants::m;
@@ -275,7 +332,22 @@ int main(int argc, char ** argv) {
 
     std::cout << getISOCurrentTimestamp<std::chrono::seconds>() << std::endl;
 
-    std::string xs_base = "./csms_differential_v1.0/";
+    std::string xs_base;
+    if(args["dune_atmo_path"]) {
+        xs_base = args["dune_atmo_path"].as<std::string>();
+    }
+    else {
+        if (const char* env_p = getenv("GOLEMSOURCEPATH")){
+            xs_base = std::string( env_p ) + "/DUNEAtmo/";
+        }
+        else {
+            std::cerr << "WARNING no DUNEAtmo path specified and GOLEMSOURCEPATH not set! Assuming the default cross section information is in ../cross_sections/" << std::endl;
+            xs_base = "../";
+        }
+    }
+    if(xs_base[-1] != '/')
+        xs_base += "/";
+    xs_base += "cross_sections/csms_differential_v1.0/";
 
     // specify the final state particles, and construct the first injector
     std::string nu_cc_diff_xs = xs_base + "dsdxdy_nu_CC_iso.fits";
@@ -373,29 +445,20 @@ int main(int argc, char ** argv) {
         cont.AddInjector(injectors[i]);
     }
 
-    std::string path;
-    if (const char* env_p = getenv("GOLEMSOURCEPATH")){
-        path = std::string( env_p ) + "/LeptonInjectorDUNE/";
-    }
-    else {
-        path = "./";
-    }
-    path += "resources/earthparams/";
-    std::cout << path << std::endl;
 
     earthmodel::EarthModelService earthModel(
             "DUNE",
             path,
-            std::vector<std::string>({"PREM_dune"}),
-            std::vector<std::string>({"Standard"}),
-            "NoIce",
-            20.0*LeptonInjector::Constants::degrees,
-            1480.0*LeptonInjector::Constants::m);
+            std::vector<std::string>({earth_model}),
+            std::vector<std::string>({materials_model}),
+            ice_type,
+            ice_angle*LeptonInjector::Constants::degrees,
+            depth*LeptonInjector::Constants::m);
 
     cont.SetEarthModel(std::shared_ptr<earthmodel::EarthModelService>(&earthModel));
 
-    cont.NameOutfile("./injected/data_output_DUNE.h5");
-    cont.NameLicFile("./injected/config_DUNE.lic");
+    cont.NameOutfile(output + ".h5");
+    cont.NameLicFile(output + ".lic");
 
     // Run the program.
     cont.Execute();
