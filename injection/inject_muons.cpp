@@ -255,6 +255,10 @@ int main(int argc, char ** argv) {
         return EXIT_SUCCESS;
     }
 
+    if(not args["output"]) {
+        std::cerr << "--output required!" << std::endl << argparser;
+        return EXIT_FAILURE;
+    }
     std::string output = args["output"].as<std::string>("./injected/output_DUNE");
 
     std::string path;
