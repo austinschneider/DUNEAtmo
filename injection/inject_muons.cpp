@@ -43,11 +43,11 @@ int main(int argc, char ** argv) {
             "The maximum injection zenith angle in degrees", 0,
         },
         {
-            "minAzimuth", {"--min-zenith", "--minAzi"},
+            "minAzimuth", {"--min-azimuth", "--minAzi"},
             "The minimum injection azimuth angle in degrees", 0,
         },
         {
-            "maxAzimuth", {"--max-zenith", "--maxAzi"},
+            "maxAzimuth", {"--max-azimuth", "--maxAzi"},
             "The maximum injection azimuth angle in degrees", 0,
         },
         {
