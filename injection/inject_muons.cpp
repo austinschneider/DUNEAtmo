@@ -18,13 +18,6 @@ std::string getISOCurrentTimestamp() {
 
 int main(int argc, char ** argv) {
     argagg::parser argparser = {{
-    // double minE = 1e2*LeptonInjector::Constants::GeV;
-    // double maxE = 1e6*LeptonInjector::Constants::GeV;
-    // double gamma = 2.;
-    // double minZenith = 0.*LeptonInjector::Constants::deg;
-    // double maxZenith = 180.*LeptonInjector::Constants::deg;
-    // double minAzimuth = 0.*LeptonInjector::Constants::deg;
-    // double maxAzimuth = 360.*LeptonInjector::Constants::deg;
         {
             "help", {"-h", "--help"},
             "Print help and exit", 0,
@@ -32,6 +25,46 @@ int main(int argc, char ** argv) {
         {
             "minE", {"--min-energy", "--minE"},
             "The minimum injection energy in GeV", 0,
+        },
+        {
+            "maxE", {"--max-energy", "--maxE"},
+            "The maximum injection energy in GeV", 0,
+        },
+        {
+            "gamma", {"--gamma"},
+            "The injection spectral index", 0,
+        },
+        {
+            "minZenith", {"--min-zenith", "--minZen"},
+            "The minimum injection zenith angle in degrees", 0,
+        },
+        {
+            "maxZenith", {"--max-zenith", "--maxZen"},
+            "The maximum injection zenith angle in degrees", 0,
+        },
+        {
+            "minAzimuth", {"--min-zenith", "--minAzi"},
+            "The minimum injection azimuth angle in degrees", 0,
+        },
+        {
+            "maxAzimuth", {"--max-zenith", "--maxAzi"},
+            "The maximum injection azimuth angle in degrees", 0,
+        },
+        {
+            "ranged_radius", {"--ranged-radius"},
+            "The ranged mode radius of injection in meters", 0,
+        },
+        {
+            "ranged_length", {"--ranged-length", "--end-cap"},
+            "The ranged mode end cap length in meters", 0,
+        },
+        {
+            "volume_radius", {"--volume-radius", "--cylinder-radius"},
+            "The volume mode injection cylinder radius in meters", 0,
+        },
+        {
+            "volume_height", {"--volume-height", "--cylinder-height"},
+            "The volume mode injection cylinder height in meters", 0,
         },
         {
             "n_ranged", {"--n-ranged"},
@@ -197,6 +230,18 @@ int main(int argc, char ** argv) {
     n_ranged_events = args["n_ranged"].as<int>(n_ranged_events);
     n_volume_events = args["n_volume"].as<int>(n_volume_events);
 
+    double minE = args["minE"].as<double>(1e2)*LeptonInjector::Constants::GeV;
+    double maxE = args["maxE"].as<double>(1e6)*LeptonInjector::Constants::GeV;
+    double gamma = args["gamma"].as<double>(2.);
+    double minZenith = args["minZenith"].as<double>(0.);
+    double maxZenith = args["maxZenith"].as<double>(180.);
+    double minAzimuth = args["minAzimuth"].as<double>(0.);
+    double maxAzimuth = args["maxAzimuth"].as<double>(360.);
+    double ranged_radius = args["ranged_radius"].as<double>(32)*LeptonInjector::Constants::m;
+    double ranged_length = args["ranged_length"].as<double>(32)*LeptonInjector::Constants::m;
+    double volume_radius = args["volume_radius"].as<double>(32)*LeptonInjector::Constants::m;
+    double volume_height = args["volume_height"].as<double>(20)*LeptonInjector::Constants::m;
+
     std::vector<std::string> interactions;
     std::vector<std::string> possible_interactions = {"cc", "nc"};
     for(unsigned int i=0; i<possible_interactions.size(); ++i) {
@@ -305,15 +350,10 @@ int main(int argc, char ** argv) {
         }
     }
 
-    // some global values shared by all the injectors
-    // units come from Constants.h
-    double minE = 1e2*LeptonInjector::Constants::GeV;
-    double maxE = 1e6*LeptonInjector::Constants::GeV;
-    double gamma = 2.;
-    double minZenith = 0.*LeptonInjector::Constants::deg;
-    double maxZenith = 180.*LeptonInjector::Constants::deg;
-    double minAzimuth = 0.*LeptonInjector::Constants::deg;
-    double maxAzimuth = 360.*LeptonInjector::Constants::deg;
+    if(injectors.size() == 0) {
+        std::cerr << "Must have at least one neutrino and one interaction type specified!" << std::endl;
+        return EXIT_FAILURE;
+    }
 
     // build the Controller object. This will facilitate the simulation itself
     // We need to pass the first injector while building this Controller
@@ -323,10 +363,10 @@ int main(int argc, char ** argv) {
             gamma,
             minAzimuth, maxAzimuth,
             minZenith, maxZenith,
-            32.*LeptonInjector::Constants::m, // injection radius
-            32.*LeptonInjector::Constants::m, // injection length
-            32.*LeptonInjector::Constants::m, // cylinder radius
-            20.*LeptonInjector::Constants::m); // cylinder height
+            ranged_radius, // injection radius
+            ranged_length, // injection length
+            volume_radius, // cylinder radius
+            volume_height); // cylinder height
 
 
     for(unsigned int i=1; i<injectors.size(); ++i) {
