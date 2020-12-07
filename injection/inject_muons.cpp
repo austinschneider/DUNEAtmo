@@ -28,83 +28,83 @@ int main(int argc, char ** argv) {
         },
         {
             "dune_atmo_path", {"--dune-atmo-path"},
-            "Path to the DUNEAtmo source directory. Used for the injection cross section.", 0,
+            "Path to the DUNEAtmo source directory. Used for the injection cross section.", 1,
         },
         {
             "lepton_injector_path", {"--li", "--li-path", "--lepton-injector-path"},
-            "Path to the lepton injector source directory. Used for earth model resources.", 0,
+            "Path to the lepton injector source directory. Used for earth model resources.", 1,
         },
         {
             "earth_model", {"--earth-model", "--earth-density", "--earth-density-model"},
-            "Name of the earth density model.", 0
+            "Name of the earth density model.", 1
         },
         {
             "materials_model", {"--materials-model", "--materials-density", "--materials-density-model"},
-            "Name of the materials density model.", 0,
+            "Name of the materials density model.", 1,
         },
         {
             "ice_type", {"--ice", "--ice-type"},
-            "The type of ice model.", 0,
+            "The type of ice model.", 1,
         },
         {
             "ice_angle", {"--ice-angle", "--ice-cap-angle"},
-            "Angle of the ice cap in degrees if it exists.", 0,
+            "Angle of the ice cap in degrees if it exists.", 1,
         },
         {
             "depth", {"--depth", "--detector-depth"},
-            "Depth of the detector origin in meters.", 0,
+            "Depth of the detector origin in meters.", 1,
         },
         {
             "minE", {"--min-energy", "--minE"},
-            "The minimum injection energy in GeV", 0,
+            "The minimum injection energy in GeV", 1,
         },
         {
             "maxE", {"--max-energy", "--maxE"},
-            "The maximum injection energy in GeV", 0,
+            "The maximum injection energy in GeV", 1,
         },
         {
             "gamma", {"--gamma"},
-            "The injection spectral index", 0,
+            "The injection spectral index", 1,
         },
         {
             "minZenith", {"--min-zenith", "--minZen"},
-            "The minimum injection zenith angle in degrees", 0,
+            "The minimum injection zenith angle in degrees", 1,
         },
         {
             "maxZenith", {"--max-zenith", "--maxZen"},
-            "The maximum injection zenith angle in degrees", 0,
+            "The maximum injection zenith angle in degrees", 1,
         },
         {
             "minAzimuth", {"--min-azimuth", "--minAzi"},
-            "The minimum injection azimuth angle in degrees", 0,
+            "The minimum injection azimuth angle in degrees", 1,
         },
         {
             "maxAzimuth", {"--max-azimuth", "--maxAzi"},
-            "The maximum injection azimuth angle in degrees", 0,
+            "The maximum injection azimuth angle in degrees", 1,
         },
         {
             "ranged_radius", {"--ranged-radius"},
-            "The ranged mode radius of injection in meters", 0,
+            "The ranged mode radius of injection in meters", 1,
         },
         {
             "ranged_length", {"--ranged-length", "--end-cap"},
-            "The ranged mode end cap length in meters", 0,
+            "The ranged mode end cap length in meters", 1,
         },
         {
             "volume_radius", {"--volume-radius", "--cylinder-radius"},
-            "The volume mode injection cylinder radius in meters", 0,
+            "The volume mode injection cylinder radius in meters", 1,
         },
         {
             "volume_height", {"--volume-height", "--cylinder-height"},
-            "The volume mode injection cylinder height in meters", 0,
+            "The volume mode injection cylinder height in meters", 1,
         },
         {
             "n_ranged", {"--n-ranged"},
-            "Number of ranged events per neutrino type per interaction", 0,
+            "Number of ranged events per neutrino type per interaction", 1,
         },
         {
             "n_volume", {"--n-volume"},
-            "Number of volume events per neutrino type per interaction", 0,
+            "Number of volume events per neutrino type per interaction", 1,
         },
         {
             "cc", {"--cc"},
@@ -140,99 +140,99 @@ int main(int argc, char ** argv) {
         },
         {
             "nue_cc_diff_xs", {"--nue-cc-dsdxdy"},
-            "Path to the nue CC differential cross section file", 0,
+            "Path to the nue CC differential cross section file", 1,
         },
         {
             "nue_cc_total_xs", {"--nue-cc-sigma"},
-            "Path to the nue CC total cross section file", 0,
+            "Path to the nue CC total cross section file", 1,
         },
         {
             "nuebar_cc_diff_xs", {"--nuebar-cc-dsdxdy"},
-            "Path to the nuebar CC differential cross section file", 0,
+            "Path to the nuebar CC differential cross section file", 1,
         },
         {
             "nuebar_cc_total_xs", {"--nuebar-cc-sigma"},
-            "Path to the nuebar CC total cross section file", 0,
+            "Path to the nuebar CC total cross section file", 1,
         },
         {
             "numu_cc_diff_xs", {"--numu-cc-dsdxdy"},
-            "Path to the numu CC differential cross section file", 0,
+            "Path to the numu CC differential cross section file", 1,
         },
         {
             "numu_cc_total_xs", {"--numu-cc-sigma"},
-            "Path to the numu CC total cross section file", 0,
+            "Path to the numu CC total cross section file", 1,
         },
         {
             "numubar_cc_diff_xs", {"--numubar-cc-dsdxdy"},
-            "Path to the numubar CC differential cross section file", 0,
+            "Path to the numubar CC differential cross section file", 1,
         },
         {
             "numubar_cc_total_xs", {"--numubar-cc-sigma"},
-            "Path to the numubar CC total cross section file", 0,
+            "Path to the numubar CC total cross section file", 1,
         },
         {
             "nutau_cc_diff_xs", {"--nutau-cc-dsdxdy"},
-            "Path to the nutau CC differential cross section file", 0,
+            "Path to the nutau CC differential cross section file", 1,
         },
         {
             "nutau_cc_total_xs", {"--nutau-cc-sigma"},
-            "Path to the nutau CC total cross section file", 0,
+            "Path to the nutau CC total cross section file", 1,
         },
         {
             "nutaubar_cc_diff_xs", {"--nutaubar-cc-dsdxdy"},
-            "Path to the nutaubar CC differential cross section file", 0,
+            "Path to the nutaubar CC differential cross section file", 1,
         },
         {
             "nutaubar_cc_total_xs", {"--nutaubar-cc-sigma"},
-            "Path to the nutaubar CC total cross section file", 0,
+            "Path to the nutaubar CC total cross section file", 1,
         },
         {
             "nue_nc_diff_xs", {"--nue-nc-dsdxdy"},
-            "Path to the nue NC differential cross section file", 0,
+            "Path to the nue NC differential cross section file", 1,
         },
         {
             "nue_nc_total_xs", {"--nue-nc-sigma"},
-            "Path to the nue NC total cross section file", 0,
+            "Path to the nue NC total cross section file", 1,
         },
         {
             "nuebar_nc_diff_xs", {"--nuebar-nc-dsdxdy"},
-            "Path to the nuebar NC differential cross section file", 0,
+            "Path to the nuebar NC differential cross section file", 1,
         },
         {
             "nuebar_nc_total_xs", {"--nuebar-nc-sigma"},
-            "Path to the nuebar NC total cross section file", 0,
+            "Path to the nuebar NC total cross section file", 1,
         },
         {
             "numu_nc_diff_xs", {"--numu-nc-dsdxdy"},
-            "Path to the numu NC differential cross section file", 0,
+            "Path to the numu NC differential cross section file", 1,
         },
         {
             "numu_nc_total_xs", {"--numu-nc-sigma"},
-            "Path to the numu NC total cross section file", 0,
+            "Path to the numu NC total cross section file", 1,
         },
         {
             "numubar_nc_diff_xs", {"--numubar-nc-dsdxdy"},
-            "Path to the numubar NC differential cross section file", 0,
+            "Path to the numubar NC differential cross section file", 1,
         },
         {
             "numubar_nc_total_xs", {"--numubar-nc-sigma"},
-            "Path to the numubar NC total cross section file", 0,
+            "Path to the numubar NC total cross section file", 1,
         },
         {
             "nutau_nc_diff_xs", {"--nutau-nc-dsdxdy"},
-            "Path to the nutau NC differential cross section file", 0,
+            "Path to the nutau NC differential cross section file", 1,
         },
         {
             "nutau_nc_total_xs", {"--nutau-nc-sigma"},
-            "Path to the nutau NC total cross section file", 0,
+            "Path to the nutau NC total cross section file", 1,
         },
         {
             "nutaubar_nc_diff_xs", {"--nutaubar-nc-dsdxdy"},
-            "Path to the nutaubar NC differential cross section file", 0,
+            "Path to the nutaubar NC differential cross section file", 1,
         },
         {
             "nutaubar_nc_total_xs", {"--nutaubar-nc-sigma"},
-            "Path to the nutaubar NC total cross section file", 0,
+            "Path to the nutaubar NC total cross section file", 1,
         },
     }};
 
