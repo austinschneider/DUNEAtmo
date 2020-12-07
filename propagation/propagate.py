@@ -2,7 +2,7 @@ import sys
 import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
-table_path = base_path + '/local/share/PROPOSAL/tables/'
+table_path = base_path + '/local/share/PROPOSAL/tables'
 config_path = base_path + '/sources/DUNEAtmo/proposal_config/'
 import proposal as pp
 import numpy as np
@@ -12,6 +12,7 @@ import LeptonInjector
 import json
 import sim_tools
 from tqdm import tqdm
+import argparse
 
 parser = argparse.ArgumentParser(description="Propagate muons")
 parser.add_argument('--config',
@@ -31,6 +32,7 @@ parser.add_argument('--output',
 args = parser.parse_args()
 
 interpolation_def = pp.InterpolationDef()
+print(table_path)
 interpolation_def.path_to_tables = table_path
 interpolation_def.path_to_tables_readonly = table_path
 
