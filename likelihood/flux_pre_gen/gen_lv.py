@@ -3,6 +3,7 @@ import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
+flux_path = base_path + '/sources/DUNEAtmo/fluxes/'
 sys.path.insert(0, core_path)
 import numpy as np
 import nuflux
@@ -21,7 +22,7 @@ im4_grid = np.logspace(-29, -26, 5*3+1)
 
 flux = nuflux.makeFlux("H3a_SIBYLL23C")
 osc = oscillator.oscillator(
-    "H3a_SIBYLL23C", flux, ebins, czbins, "lv", "./fluxes/", cache_size=10
+    "H3a_SIBYLL23C", flux, ebins, czbins, "lv", flux_path, cache_size=10
 )
 
 osc[(3, 0, 0, 0, 0)]
