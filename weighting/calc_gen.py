@@ -1,11 +1,6 @@
 import argparse
 
 parser = argparse.ArgumentParser(description="Calculate generation probabilities")
-parser.add_argument('--config',
-        type=str,
-        dest='config',
-        required=True,
-        )
 parser.add_argument('--propagated',
         type=str,
         dest='propagated',
@@ -48,6 +43,13 @@ gen_earth_model_params = [
 
 lic_files = sorted(glob.glob(args.lic))
 prop_files = sorted(glob.glob(args.propagated))
+
+print("lic files:")
+print(lic_files)
+print()
+print("prop_files:")
+print(prop_files)
+print()
 
 by_prefix = dict()
 for lic in lic_files:
@@ -95,6 +97,7 @@ def count_gen_events(blocks):
     n = 0
     for block in blocks:
         block_name, block_version, block_data = block
+        print(block_name)
         if block_name == 'VolumeInjectionConfiguration' or block_name == 'RangedInjectionConfiguration':
             n += block_data["events"]
     return n
@@ -112,27 +115,32 @@ nu_interactions_list = LWpy.get_standard_interactions()
 int_model = LWpy.interaction_model(nu_interactions_list, earth_model_params)
 
 lic_output = os.path.join(args.outdir, args.output + '.lic')
+print("lic_output:", lic_output)
 
+all_blocks = []
 if os.path.exists(lic_output):
-    blocks = load_gen(lic_output)
+    all_blocks = load_gen(lic_output)
 else:
-    all_blocks = []
     for prefix, (lic, prop) in joint_by_prefix.items():
         json_data = json.load(open(prop, 'r'))
         n_prop_events = np.sum(json_data["injector_count"])
         del json_data
         blocks = load_gen(lic)
         n_gen_events = count_gen_events(blocks)
+        print("N gen:", n_gen_events, "N prop:", n_prop_events)
         if n_prop_events != n_gen_events:
             continue
         all_blocks.extend(blocks)
-
-    blocks = LWpy.merge_blocks(all_blocks)
+        print(len(all_blocks))
+        all_blocks = LWpy.merge_blocks(all_blocks)
+        print(len(all_blocks))
+        print()
 
     s = LWpy.write_stream(os.path.join(args.outdir, args.output + '.lic'), spline_dir='./splines/')
-    s.write(blocks)
+    s.write(all_blocks)
 
-generators = blocks_to_gen(blocks)
+print(all_blocks)
+generators = blocks_to_gen(all_blocks)
 
 def calc_gen_prob(json_data):
     energy = np.array(json_data["energy"])
@@ -213,7 +221,7 @@ def calc_gen_prob(json_data):
     gen_prob /= k_prob * fs_prob
     return gen_prob
 
-keep_keys = ['energy', 'zenith', 'azimuth', 'particle', 'mu_energy', 'mu_zenith', 'entry_energy', 'entry_zenith', 'morphology']
+#keep_keys = ['energy', 'zenith', 'azimuth', 'particle', 'mu_energy', 'mu_zenith', 'entry_energy', 'entry_zenith', 'morphology']
 gen_prob = []
 all_json = dict()
 tot_prop_events = 0
@@ -223,16 +231,16 @@ for prefix, (lic, prop) in joint_by_prefix.items():
     n_prop_events = np.sum(json_data["injector_count"])
     tot_prop_events += n_prop_events
     for k in json_data.keys():
-        if k not in keep_keys:
-            continue
+        #if k not in keep_keys:
+        #    continue
         if k not in all_json:
             all_json[k] = json_data[k]
         else:
             all_json[k].extend(json_data[k])
 
-n_gen_events = count_gen_events(blocks)
+n_gen_events = count_gen_events(all_blocks)
 if n_gen_events != tot_prop_events:
-    print("Generated event count doe not match propagated event count!!")
+    print("Generated event count does not match propagated event count!!")
     print("Generated events:", n_gen_events)
     print("Propagated events:", tot_prop_events)
     print("Applying approximate rescaling!")
