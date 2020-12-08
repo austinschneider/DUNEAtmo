@@ -3,6 +3,8 @@ import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
+flux_path = base_path + '/sources/DUNEAtmo/fluxes/'
+weight_path = base_path + '/sources/DUNEAtmo/likelihood/data/weighted/'
 sys.path.insert(0, core_path)
 import collections
 import functools
@@ -67,11 +69,11 @@ import likelihood
 def setup_lv_analysis():
     units = nsq.Const()
     ebins = np.logspace(1, 6, 100 + 1) * units.GeV
-    czbins = np.linspace(-1, 0, 100 + 1)
+    czbins = np.linspace(-1, 1, 100 + 1)
 
     flux = nuflux.makeFlux("H3a_SIBYLL23C")
     osc = oscillator.oscillator(
-        "H3a_SIBYLL23C", flux, ebins, czbins, "lv", "./fluxes/", cache_size=10
+        "H3a_SIBYLL23C", flux, ebins, czbins, "lv", flux_path, cache_size=10
     )
 
     the_store = prop_store.store()
@@ -84,7 +86,7 @@ def setup_lv_analysis():
         import binning
 
         print("Loading the mc")
-        mc = data_loader.load_data("../weighted/weighted.json")
+        mc = data_loader.load_data(weight_path + "weighted.json")
         tg_emin = 1e2,
         tg_emax = 1e5,
         start_emin = 1e2,
