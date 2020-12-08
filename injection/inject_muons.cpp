@@ -288,8 +288,8 @@ int main(int argc, char ** argv) {
     int n_ranged_events = int(1e6);
     int n_volume_events = int(1e5);
 
-    n_ranged_events = args["n_ranged"].as<int>(n_ranged_events);
-    n_volume_events = args["n_volume"].as<int>(n_volume_events);
+    n_ranged_events = int(args["n_ranged"].as<float>(float(n_ranged_events)));
+    n_volume_events = int(args["n_volume"].as<float>(float(n_volume_events)));
 
     double minE = args["minE"].as<double>(1e2)*LeptonInjector::Constants::GeV;
     double maxE = args["maxE"].as<double>(1e6)*LeptonInjector::Constants::GeV;
