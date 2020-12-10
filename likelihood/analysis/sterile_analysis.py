@@ -3,6 +3,8 @@ import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
+flux_path = base_path + '/sources/DUNEAtmo/fluxes/'
+weight_path = base_path + '/sources/DUNEAtmo/likelihood/data/weighted/'
 sys.path.insert(0, core_path)
 import collections
 import functools
@@ -71,7 +73,7 @@ def setup_sterile_analysis():
 
     flux = nuflux.makeFlux("H3a_SIBYLL23C")
     osc = oscillator.oscillator(
-        "H3a_SIBYLL23C", flux, ebins, czbins, "sterile", "./fluxes/", cache_size=10
+        "H3a_SIBYLL23C", flux, ebins, czbins, "sterile", flux_path, cache_size=10
     )
 
     the_store = prop_store.store()
@@ -84,7 +86,7 @@ def setup_sterile_analysis():
         import binning
 
         print("Loading the mc")
-        mc = data_loader.load_data("../weighted/weighted.json")
+        mc = data_loader.load_data(weight_path + "weighted.json")
         tg_emin = 1e2,
         tg_emax = 1e5,
         start_emin = 1e2,
@@ -208,7 +210,8 @@ def setup_sterile_analysis():
 
     # Compute the MC expectation per bin
     def expect(binned_mc_weight):
-        return [np.sum(w) for w in binned_mc_weight]
+        res = [np.sum(w) for w in binned_mc_weight]
+        return res
     the_store.add_prop("expect", ["binned_mc_weight"], expect)
 
     # Compute the MC square expectation per bin
@@ -232,7 +235,6 @@ def setup_sterile_analysis():
 
     def asimov_expect(binned_asimov_data):
         res = [np.sum(w) for w in binned_asimov_data]
-        print("Asimov expect:", np.sum(res))
         return res
     the_store.add_prop("asimov_expect", ["binned_asimov_data"], asimov_expect)
 
