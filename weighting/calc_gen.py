@@ -87,7 +87,7 @@ def blocks_to_gen(blocks):
         elif block_name == 'VolumeInjectionConfiguration':
             gen = LWpy.volume_generator(block, spline_dir='./splines/')
         elif block_name == 'RangedInjectionConfiguration':
-            gen = LWpy.ranged_generator(block, gen_earth_model_params, spline_dir='./splines')
+            gen = LWpy.ranged_generator(block, gen_earth_model_params, spline_dir='./splines/')
         else:
             raise ValueError("Unrecognized block! " + block_name)
         generators.append(gen)
@@ -117,12 +117,50 @@ int_model = LWpy.interaction_model(nu_interactions_list, earth_model_params)
 lic_output = os.path.join(args.outdir, args.output + '.lic')
 print("lic_output:", lic_output)
 
+def merge_json(j0, j1):
+    if j0 is None:
+        return j1
+    if j1 is None:
+        return j0
+    res = dict()
+    keys = list(j0.keys())
+    for k in keys:
+        if k == "injector_count":
+            continue
+        v0 = j0[k]
+        v1 = j1[k]
+        res[k] = np.concatenate([v0, v1])
+    v0 = j0["injector_count"]
+    v1 = j1["injector_count"]
+    c = [c1 for c0, c1 in zip(v0, v1)]
+    res["injector_count"] = c
+    
+    return res
+
+def read_file(fname):
+    f = open(fname, "r")
+    dec = json.JSONDecoder()
+    data = None
+    for json_str in f.readlines():
+        pos = 0
+        while not pos == len(str(json_str)):
+            j, json_len = dec.raw_decode(str(json_str)[pos:])
+            pos += json_len
+            data = merge_json(data, j)
+    return data
+
+def read_files(fnames):
+    data = None
+    for fname in tqdm.tqdm(fnames):
+        data = merge_json(data, read_file(fname))
+    return data
+
 all_blocks = []
 if os.path.exists(lic_output):
     all_blocks = load_gen(lic_output)
 else:
     for prefix, (lic, prop) in joint_by_prefix.items():
-        json_data = json.load(open(prop, 'r'))
+        json_data = read_file(prop)
         n_prop_events = np.sum(json_data["injector_count"])
         del json_data
         blocks = load_gen(lic)
@@ -226,7 +264,7 @@ gen_prob = []
 all_json = dict()
 tot_prop_events = 0
 for prefix, (lic, prop) in joint_by_prefix.items():
-    json_data = json.load(open(prop, 'r'))
+    json_data = read_file(prop)
     gen_prob.extend(calc_gen_prob(json_data).tolist())
     n_prop_events = np.sum(json_data["injector_count"])
     tot_prop_events += n_prop_events
@@ -234,9 +272,9 @@ for prefix, (lic, prop) in joint_by_prefix.items():
         #if k not in keep_keys:
         #    continue
         if k not in all_json:
-            all_json[k] = json_data[k]
+            all_json[k] = list(json_data[k])
         else:
-            all_json[k].extend(json_data[k])
+            all_json[k] += list(json_data[k])
 
 n_gen_events = count_gen_events(all_blocks)
 if n_gen_events != tot_prop_events:
