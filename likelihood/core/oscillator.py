@@ -218,7 +218,8 @@ class oscillator:
 
             return nuSQ
         elif self.scenario == 'lv':
-            operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im = args
+            #operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im = args
+            operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu = args
             lv_power = operator_dimension - 3
             units = nsq.Const()
             u = (units.GeV/units.eV)**(-lv_power + 1)
@@ -240,7 +241,8 @@ class oscillator:
 
             nuSQ.Set_LV_EnergyPower(lv_power)
 
-            nuSQ.Set_LV_OpMatrix(lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im)
+            #nuSQ.Set_LV_OpMatrix(lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im)
+            nuSQ.Set_LV_OpMatrix(lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu)
 
             nuSQ.Set_initial_state(self.init_state, nsq.Basis.flavor)
 
