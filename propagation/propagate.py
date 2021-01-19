@@ -133,11 +133,53 @@ for i,n in enumerate(injector_n):
 
 injector_count = np.zeros(len(injector_list))
 
+
+mode = 'w'
+batch_size = 0 
+save_size = 5000
+n_saved = 0
 entries = []
 entries_mask = []
+particle_counts = dict()
 
-def save_entries():
-    mask = order[:len(entries_mask)][entries_mask]
+for i in tqdm(range(len(props)), total=len(props)):
+    injector_index = injectors[order[i]]
+    injector_count[injector_index] += 1
+    part, mu_part = props[order[i]], mu_props[order[i]]
+    pp_part = make_p(part, mu_part)
+
+    if pp_part.type not in particle_counts:
+        particle_counts[pp_part.type] = 0
+    particle_counts[pp_part.type] += 1
+
+    d0, d1 = geo_epsilon.distance_to_border(pp_part.position, pp_part.direction)
+    infront = d0 > 0 and d1 > 0
+    inside = d0 > 0 and d1 < 0
+    outside = d0 < 0 and d1 < 0
+    if outside:
+        entries_mask.append(False)
+    else:
+        if mu_part["particle"] == 13:
+            secondaries = prop_mu_minus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
+        elif mu_part["particle"] == -13:
+            secondaries = prop_mu_plus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
+        particles = secondaries.particles
+
+        entry = sim_tools.compute_sim_info(geo_det_single, pp_part, particles)
+        morphology, deposited_energy, detector_track_length, start_info, end_info, path_pairs = entry
+        if morphology == sim_tools.EventMorphology.missing:
+            entries_mask.append(False)
+        else:
+            entries.append(entry)
+            entries_mask.append(True)
+        del particles
+        del secondaries
+    batch_size += 1
+
+    if i < len(props)-1 and batch_size < save_size:
+        continue
+
+    mask = order[n_saved:n_saved+len(entries_mask)][entries_mask]
     these_props = props[mask]
     mu_these_props = mu_props[mask]
 
@@ -238,39 +280,14 @@ def save_entries():
         'injector_count': injector_count.tolist(),
         }
 
-    f = open(args.output, 'w')
+    f = open(args.output, mode)
     json.dump(data, f)
     f.close()
 
-for i in tqdm(range(len(props)), total=len(props)):
-    injector_index = injectors[order[i]]
-    injector_count[injector_index] += 1
-    part, mu_part = props[order[i]], mu_props[order[i]]
-    pp_part = make_p(part, mu_part)
-    d0, d1 = geo_epsilon.distance_to_border(pp_part.position, pp_part.direction)
-    infront = d0 > 0 and d1 > 0
-    inside = d0 > 0 and d1 < 0
-    outside = d0 < 0 and d1 < 0
-    if outside:
-        entries_mask.append(False)
-    else:
-        if mu_part["particle"] == 13:
-            secondaries = prop_mu_minus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
-        elif mu_part["particle"] == -13:
-            secondaries = prop_mu_plus.propagate(pp_part, max_distance_cm=1e20, minimal_energy=100)
-        particles = secondaries.particles
-
-        entry = sim_tools.compute_sim_info(geo_det_single, pp_part, particles)
-        morphology, deposited_energy, detector_track_length, start_info, end_info, path_pairs = entry
-        if morphology == sim_tools.EventMorphology.missing:
-            entries_mask.append(False)
-        else:
-            entries.append(entry)
-            entries_mask.append(True)
-        del particles
-        del secondaries
-
-    if i % 50000 == 0:
-        save_entries()
-save_entries()
+    mode = 'a'
+    n_saved += len(entries_mask)
+    entries = []
+    entries_mask = []
+    particle_counts = dict()
+    injector_count = np.zeros(len(injector_list))
 
