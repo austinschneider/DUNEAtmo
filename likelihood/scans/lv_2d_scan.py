@@ -5,6 +5,8 @@ base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
 sys.path.insert(0, core_path)
 analysis_path = base_path + '/sources/DUNEAtmo/likelihood/analysis/'
+default_flux_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/fluxes/'
+default_weight_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/simulation/weighted/'
 sys.path.insert(0, analysis_path)
 import numpy as np
 import json
@@ -13,6 +15,33 @@ import scipy.optimize
 import lv_analysis
 import likelihood
 
+import argparse                                                                                                            
+parser = argparse.ArgumentParser(description="LV scan")
+parser.add_argument('--flux-path',
+        type=str,
+        dest='flux_path',
+        required=False,
+        default=default_flux_path,
+        )
+parser.add_argument('--weight-path',
+        type=str,
+        dest='weight_path',
+        required=False,
+        default=default_weight_path,
+        )
+parser.add_argument('--chunks',
+        type=int,
+        dest="chunks",
+        default=0,
+        required=False,
+        )
+parser.add_argument('--chunk-number',
+        type=int,
+        dest="chunk_number",
+        default=0,
+        required=False,
+        )
+args = parser.parse_args()
 
 default_asimov_params = {
     "operator_dimension": 3,
@@ -24,14 +53,51 @@ default_asimov_params = {
     "CRDeltaGamma": 0.0,
 }
 
-re3_grid = np.logspace(-25, -22, 5*3+1)
-im3_grid = np.logspace(-25, -22, 5*3+1)
+diag3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1), -np.logspace(-25, -22, 5*3+1)])
+re3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
+im3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
 
-re4_grid = np.logspace(-29, -26, 5*3+1)
-im4_grid = np.logspace(-29, -26, 5*3+1)
+diag4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1), -np.logspace(-29, -26, 5*3+1)])
+re4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
+im4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
 
-def lv_2d_scan(asimov_params=default_asimov_params, re3_grid=re3_grid, im3_grid=im3_grid, re4_grid=re4_grid, im4_grid=im4_grid, output=output):
-    the_store = analysis_lv.setup_lv_analysis()
+parameter_points = []
+
+for re3 in re3_grid:
+    for im3 in im3_grid:
+        for diag3 in diag3_grid:
+            params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
+            parameter_points.append(params)
+
+for re4 in re4_grid:
+    for im4 in im4_grid:
+        for diag4 in diag4_grid:
+            params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
+            parameter_points.append(params)
+
+items = parameter_points
+
+if args.chunks > 0:
+    a = int(np.floor(float(len(items)) / float(args.chunks)))
+    b = int(np.ceil(float(len(items)) / float(args.chunks)))
+    x = len(items) - a*args.chunks
+    if args.chunk_number < x:
+        n = b
+        n0 = n*args.chunk_number
+    else:
+        n = a
+        n0 = b*x + a*(args.chunk_number - x)
+    n1 = min(n0 + n, len(items))
+    if n0 >= len(items): 
+        exit(0)
+    items = items[n0:n1]
+
+parameter_points = items
+
+output = "./test.json"
+
+def lv_2d_scan(asimov_params=default_asimov_params, re3_grid=re3_grid, im3_grid=im3_grid, re4_grid=re4_grid, im4_grid=im4_grid, output=output, weight_path=default_weight_path, flux_path=default_flux_path):
+    the_store = analysis_lv.setup_lv_analysis(weight_path=weight_path, flux_path=flux_path)
 
     asimov_expect = the_store.get_prop("asimov_expect", asimov_params)
     def asimov_binned_likelihood(parameters):
@@ -68,7 +134,7 @@ def lv_2d_scan(asimov_params=default_asimov_params, re3_grid=re3_grid, im3_grid=
     entries = []
     physical_params = dict(asimov_params)
     print("Setting up fit:")
-    print("\tlv_mutau_re  =", 0)
+    print("\tlv_mutau_re =", 0)
     print("\tlv_mutau_im =", 0)
     def f(x):
         convNorm, CRDeltaGamma = x
