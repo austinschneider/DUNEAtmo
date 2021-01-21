@@ -3,8 +3,7 @@ import os.path
 import collections
 import numpy as np
 import nuflux
-import nuSQUIDSpy as nsq
-import nuSQUIDSTools
+import nuSQuIDS as nsq
 
 class memodict_(collections.OrderedDict):
     def __init__(self, f, maxsize=1):
@@ -62,7 +61,7 @@ def params_to_fname(parameters, store_dir='./'):
         baseline = os.path.basename(baseline)
         if baseline.endswith(suffix):
             baseline = baseline[:-len(suffix)]
-        operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im = params
+        operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu = params
         fname = baseline + '_' + '_'.join([param_to_string(params[0],log=False,n=0)] + [param_to_string(p) for p in params[1:]]) + suffix
     elif scenario == 'standard':
         suffix = '.h5'
