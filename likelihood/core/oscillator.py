@@ -226,6 +226,10 @@ class oscillator:
             lv_emu_im *= u
             lv_mutau_re *= u
             lv_mutau_im *= u
+            lv_etau_re *= u
+            lv_etau_im *= u
+            lv_ee *= u
+            lv_mumu *= u
 
             numneu = 3
             interactions = True
