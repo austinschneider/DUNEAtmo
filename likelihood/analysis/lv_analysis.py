@@ -10,8 +10,7 @@ import collections
 import functools
 import numpy as np
 import nuflux
-import nuSQUIDSpy as nsq
-import nuSQUIDSTools
+import nuSQuIDS as nsq
 import oscillator
 import prop_store
 import likelihood
@@ -66,7 +65,7 @@ import likelihood
 # physics_parameters = {"physics_value": np.pi/4.}
 # value = the_store.get_prop("my_value", physics_parameters)
 
-def setup_lv_analysis():
+def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
     units = nsq.Const()
     ebins = np.logspace(1, 6, 100 + 1) * units.GeV
     czbins = np.linspace(-1, 1, 100 + 1)
@@ -133,10 +132,10 @@ def setup_lv_analysis():
 
     # Convenience function for calling the nusquids flux repository
     # This nusquids repository does the LV scenario, but the concept is easily extensible
-    def nsq_flux(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im):
-        flux = osc[(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im)]
+    def nsq_flux(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu):
+        flux = osc[(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu)]
         return flux
-    the_store.add_prop("nsq_flux", ["operator_dimension", "lv_emu_re", "lv_emu_im", "lv_mutau_re", "lv_mutau_im"], nsq_flux)
+    the_store.add_prop("nsq_flux", ["operator_dimension", "lv_emu_re", "lv_emu_im", "lv_mutau_re", "lv_mutau_im", "lv_etau_re", "lv_etau_im", "lv_ee", "lv_mumu"], nsq_flux)
 
     # How to get the flux for MC events from nusquids
     # That is before we modify it with additional parameters
@@ -287,6 +286,10 @@ if __name__ == "__main__":
     lv_emu_im = 0
     lv_mutau_re = 1e-22
     lv_mutau_im = 1e-22
+    lv_etau_re = 0
+    lv_etau_im = 0
+    lv_ee = 0
+    lv_mumu = 0
 
     physical_params = {
         "operator_dimension": operator_dimension,
@@ -294,6 +297,10 @@ if __name__ == "__main__":
         "lv_emu_im": lv_emu_im,
         "lv_mutau_re": lv_mutau_re,
         "lv_mutau_im": lv_mutau_im,
+        "lv_etau_re": lv_etau_re,
+        "lv_etau_im": lv_etau_im,
+        "lv_ee": lv_ee,
+        "lv_mumu": lv_mumu,
         "convNorm": 1.0,
         "CRDeltaGamma": 0.0,
     }
@@ -303,6 +310,10 @@ if __name__ == "__main__":
         "lv_emu_im": 0,
         "lv_mutau_re": 0,
         "lv_mutau_im": 0,
+        "lv_etau_re": 0,
+        "lv_etau_im": 0,
+        "lv_ee": 0,
+        "lv_mumu": 0,
         "convNorm": 1.0,
         "CRDeltaGamma": 0.0,
     }
