@@ -39,13 +39,18 @@ units = nsq.Const()
 ebins = np.logspace(1, 6, 100 + 1) * units.GeV
 czbins = np.linspace(-1, 1, 100 + 1)
 
-diag3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1), -np.logspace(-25, -22, 5*3+1)])
-re3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
-im3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
 
-diag4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1), -np.logspace(-29, -26, 5*3+1)])
-re4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
-im4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
+dim3_grid = np.logspace(-25, -19, 5*6+1)
+dim3_grid = np.logspace(-25, -22, 5*3+1)
+diag3_grid = np.concatenate([[0.0], dim3_grid, -dim3_grid])
+re3_grid = np.concatenate([[0.0], dim3_grid])
+im3_grid = np.concatenate([[0.0], dim3_grid])
+
+dim4_grid = np.logspace(-29, -23, 5*6+1)
+dim4_grid = np.logspace(-29, -26, 5*3+1)
+diag4_grid = np.concatenate([[0.0], dim4_grid, -dim4_grid])
+re4_grid = np.concatenate([[0.0], dim4_grid])
+im4_grid = np.concatenate([[0.0], dim4_grid])
 
 flux = nuflux.makeFlux("H3a_SIBYLL23C")
 osc = oscillator.oscillator(
