@@ -119,11 +119,11 @@ class oscillator:
     def build_object(self, args):
         fname = params_to_fname((self.name, self.scenario, args), store_dir=self.store_dir)
         params = fname_to_params(fname)
+        print(fname)
         if os.path.exists(fname):
             if self.scenario == 'baseline' or self.scenario == 'sterile':
                 obj = nsq.nuSQUIDSAtm(fname)
             elif self.scenario == 'lv':
-                print(fname)
                 obj = nsq.nuSQUIDSAtm(fname)
         else:
             self.prepare_init_state()
