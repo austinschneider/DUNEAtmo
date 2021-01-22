@@ -3,8 +3,8 @@ import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
-flux_path = base_path + '/sources/DUNEAtmo/fluxes/'
-weight_path = base_path + '/sources/DUNEAtmo/likelihood/data/weighted/'
+flux_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/fluxes/'
+weight_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/simulation/weighted/'
 sys.path.insert(0, core_path)
 import collections
 import functools
