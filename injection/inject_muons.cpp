@@ -234,6 +234,10 @@ int main(int argc, char ** argv) {
             "nutaubar_nc_total_xs", {"--nutaubar-nc-sigma"},
             "Path to the nutaubar NC total cross section file", 1,
         },
+        {
+            "seed", {"--seed"},
+            "Seed for the injector", 1,
+        },
     }};
 
     std::ostringstream usage;
@@ -253,6 +257,13 @@ int main(int argc, char ** argv) {
     if(args["help"]) {
         std::cerr << argparser;
         return EXIT_SUCCESS;
+    }
+
+    double seed = args["seed"].as<int>(-1);
+
+    if(seed < 0) {
+        std::cerr << "--seed requires positive integer!" << std::endl << argparser;
+        return EXIT_FAILURE;
     }
 
     if(not args["output"]) {
@@ -448,6 +459,9 @@ int main(int argc, char ** argv) {
     for(unsigned int i=1; i<injectors.size(); ++i) {
         cont.AddInjector(injectors[i]);
     }
+
+
+    cont.setSeed(seed);
 
 
     earthmodel::EarthModelService earthModel(
