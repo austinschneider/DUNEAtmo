@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.style
-matplotlib.style.use('./paper.mplstyle')
+#import matplotlib.style
+#matplotlib.style.use('./paper.mplstyle')
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
@@ -14,31 +14,39 @@ import numpy as np
 import h5py as h5
 import LWpy
 import LeptonInjector
-import nuSQUIDSpy as nsq
 import json
 import functools
 import meander
+import glob
 
-outdir = './plots/3d_sterile/'
+outdir = './plots/sterile/'
 
-json_fname = './sterile_scan.json'
-f = open(json_fname, 'r')
-json_data = json.load(f)
+fnames = glob.glob(
+    "/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/scans/sterile/*.json"
+)
 
 val_by_key = dict()
 index_by_sterile_params = dict()
 i = 0
-for entry in json_data:
-    keys = entry.keys()
-    j = 0
-    for k in keys:
-        if k not in val_by_key:
-            val_by_key[k] = []
-            j += 1
-        val_by_key[k].append(entry[k])
-    assert(j == 0 or j == len(entry))
-    index_by_sterile_params[(float(entry['dm2']), float(entry['th24']), float(entry['th34']))] = i
-    i += 1
+for json_fname in fnames:
+    print(json_fname)
+    f = open(json_fname, "r")
+    for line in f:
+        json_data = json.loads(line)
+        if type(json_data) is dict:
+            json_data = [json_data]
+        for entry in json_data:
+            keys = entry.keys()
+            j = 0
+            for k in keys:
+                if k not in val_by_key:
+                    val_by_key[k] = []
+                    j += 1
+                val_by_key[k].append(entry[k])
+            assert j == 0 or j == len(entry)
+            grid_point = (float(entry['dm2']), float(entry['th24']), float(entry['th34']))
+            index_by_sterile_params[grid_point] = i
+            i += 1
 
 keys = val_by_key.keys()
 null_index = index_by_sterile_params[(0.0, 0.0, 0.0)]
@@ -53,7 +61,8 @@ th34 = val_by_key['th34']
 llh = val_by_key['llh']
 unique_th34 = sorted(np.unique(th34))
 for this_th34 in unique_th34:
-    mask = th34 == this_th34
+    print(this_th34)
+    mask = functools.reduce(np.logical_and, [th34 == this_th34, dm2 > 0, th24 > 0])
     this_dm2 = dm2[mask]
     this_th24 = th24[mask]
     this_llh = llh[mask]
@@ -96,6 +105,7 @@ for this_th34 in unique_th34:
     points_mask = ~np.isnan(samples)
     null_llh = null_entry['llh']
     samples = samples - null_llh
+    samples[samples<0] = 0
     samples = samples[points_mask]
     sample_points = sample_points[points_mask,:]
 
@@ -113,6 +123,7 @@ for this_th34 in unique_th34:
     levels = scipy.special.gammaincinv(dof / 2.0, np.array(proportions))
     print("levels:", levels)
 
+    print(len(sample_points), len(samples))
     contours_by_level = meander.compute_contours(sample_points, samples, levels)
 
     fig, ax = plt.subplots(figsize=(7,5))
@@ -146,6 +157,7 @@ for this_th34 in unique_th34:
         else:
             s = '%0.1f' % sigma
         label = labels[i] + r' $' + s + r'\%$'
+        label = labels[i] + r' ' + s
         label_done = False
         linestyle = level_line_styles[j]
         for contour in contours:
@@ -157,12 +169,16 @@ for this_th34 in unique_th34:
                 label_done = True
 
 
-    newax.plot([x_rescale(0.1)], [y_rescale(4.5)], color='blue', linestyle='none', marker='o', label=r'IceCube best-fit point ($\theta_{34}=0$)', markersize=8, markeredgewidth=2)
-    newax.plot([x_rescale(0.1)], [y_rescale(1.0)], color='blue', linestyle='none', marker='x', label=r'IceCube test-point ($\theta_{34}=0.3$)', markersize=8, markeredgewidth=2)
+    #newax.plot([x_rescale(0.1)], [y_rescale(4.5)], color='blue', linestyle='none', marker='o', label=r'IceCube best-fit point ($\theta_{34}=0$)', markersize=8, markeredgewidth=2)
+    newax.plot([x_rescale(0.1)], [y_rescale(4.5)], color='blue', linestyle='none', marker='o', label=r'IceCube best-fit point (theta34=0)', markersize=8, markeredgewidth=2)
+    #newax.plot([x_rescale(0.1)], [y_rescale(1.0)], color='blue', linestyle='none', marker='x', label=r'IceCube test-point ($\theta_{34}=0.3$)', markersize=8, markeredgewidth=2)
+    newax.plot([x_rescale(0.1)], [y_rescale(1.0)], color='blue', linestyle='none', marker='x', label=r'IceCube test-point (theta34=0.3)', markersize=8, markeredgewidth=2)
     newax.arrow(x_rescale(0.1), y_rescale(4.5)-0.025, 0, y_rescale(1.0) - y_rescale(4.5) + 0.05, color='red', length_includes_head=True, head_length=0.01, head_width=0.01, zorder=10)
 
-    ax.set_xlabel(r'$\sin^2(2\theta_{24})$')
-    ax.set_ylabel(r'$\Delta m^2_{41}~[\textrm{eV}^2]$')
+    #ax.set_xlabel(r'$\sin^2(2\theta_{24})$')
+    #ax.set_ylabel(r'$\Delta m^2_{41}~[\textrm{eV}^2]$')
+    ax.set_xlabel(r'sintheta24')
+    ax.set_ylabel(r'deltamsquared41')
     #ax.set_xlim((0.001, 1))
     #ax.set_ylim((0.01, 100))
     ax.set_xlim((a_min, a_max))
@@ -173,7 +189,8 @@ for this_th34 in unique_th34:
     s_th34 = '%.02f' % s22th34
     s_th34 = '%.02f' % this_th34
     #ax.set_title(r'$\sin^2(2\theta_{34})=' + s_th34 + r'$')
-    ax.set_title(r'$\theta_{34}=' + s_th34 + r'$')
+    #ax.set_title(r'$\theta_{34}=' + s_th34 + r'$')
+    ax.set_title(r'theta34=' + s_th34)
     ax.legend(frameon=True)
     newax.legend(frameon=True)
     fig.tight_layout()
