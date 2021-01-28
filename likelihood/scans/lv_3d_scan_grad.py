@@ -63,27 +63,31 @@ default_asimov_params = {
     "CRDeltaGamma": 0.0,
 }
 
-diag3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1), -np.logspace(-25, -22, 5*3+1)])
-re3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
-im3_grid = np.concatenate([[0.0], np.logspace(-25, -22, 5*3+1)])
+def build_grid(rho, f1, f2):
+    one = np.ones((len(rho), len(f1), len(f2)))
+    a = one*rho[:,None,None]*f1[None,:,None]
+    b = one*rho[:,None,None]*f2[None,None,:]*np.sqrt(1-f1**2)[None,:,None]
+    c = one*rho[:,None,None]*(np.sqrt(1-f2**2)[None,None,:])*np.sqrt(1-f1**2)[None,:,None]
+    points = np.array([a.flatten(), b.flatten(), c.flatten()]).T
+    return np.unique(points, axis=0)
 
-diag4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1), -np.logspace(-29, -26, 5*3+1)])
-re4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
-im4_grid = np.concatenate([[0.0], np.logspace(-29, -26, 5*3+1)])
+rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+f1_3_grid = np.linspace(-1, 1, 50+1)
+f2_3_grid = np.linspace(0, 1, 25+1)
+
+rho_4_grid = np.concatenate([[0.0], np.logspace(-29, -23, 5*6+1)])
+f1_4_grid = np.linspace(-1, 1, 50+1)
+f2_4_grid = np.linspace(0, 1, 25+1)
 
 parameter_points = []
 
-for re3 in re3_grid:
-    for im3 in im3_grid:
-        for diag3 in diag3_grid:
-            params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
-            parameter_points.append(params)
+for diag3, re3, im3 in build_grid(rho_3_grid, f1_3_grid, f2_3_grid):
+    params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
+    parameter_points.append(params)
 
-for re4 in re4_grid:
-    for im4 in im4_grid:
-        for diag4 in diag4_grid:
-            params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
-            parameter_points.append(params)
+for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
+    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
+    parameter_points.append(params)
 
 items = parameter_points
 
@@ -111,9 +115,9 @@ seeds = []
 norm_seeds = np.linspace(0.9, 1.1, 2)
 cr_seeds = np.linspace(-0.02, 0.02, 2)
 seeds.append([1.0, 0.0])
-for ns in norm_seeds:
-    for crs in cr_seeds:
-        seeds.append([ns, crs])
+#for ns in norm_seeds:
+#    for crs in cr_seeds:
+#        seeds.append([ns, crs])
 
 def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_points, output="./test.json", weight_path=default_weight_path, flux_path=default_flux_path):
     the_store = lv_analysis_grad.setup_lv_analysis(weight_path=weight_path, flux_path=flux_path)
@@ -229,6 +233,7 @@ def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_p
             "convNorm": 1.0,
             "CRDeltaGamma": 0.0,
         }
+        np.set_printoptions(precision=16)
         def f(x):
             convNorm, CRDeltaGamma = x
             p = {"convNorm": convNorm, "CRDeltaGamma": CRDeltaGamma}
@@ -239,6 +244,7 @@ def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_p
             else:
                 llh = asimov_likelihood(physical_params)
                 res = (-(llh[0] + prior[0]), -(llh[1] + np.array(prior[1])))
+            print(x)
             assert(not np.isnan(res[0]))
             return res
         best = None
