@@ -21,6 +21,10 @@ import meander
 
 outdir = './plots/2d_sterile/'
 
+fnames = glob.glob(
+    "/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/scans/lv/dim3/*.json"
+)
+
 json_fname = './sterile_scan_2d.json'
 f = open(json_fname)
 json_data = json.load(f)
