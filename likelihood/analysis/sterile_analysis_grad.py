@@ -17,8 +17,6 @@ import likelihood_grad
 import autodiff as ad
 import glob
 
-np.seterr(all='raise')
-
 
 ### How to build an analysis
 ## Instantiate the store
@@ -69,14 +67,14 @@ np.seterr(all='raise')
 # physics_parameters = {"physics_value": np.pi/4.}
 # value = the_store.get_prop("my_value", physics_parameters)
 
-def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
+def setup_sterile_analysis():
     units = nsq.Const()
     ebins = np.logspace(1, 6, 100 + 1) * units.GeV
     czbins = np.linspace(-1, 1, 100 + 1)
 
     flux = nuflux.makeFlux("H3a_SIBYLL23C")
     osc = oscillator.oscillator(
-        "H3a_SIBYLL23C", flux, ebins, czbins, "lv", flux_path, cache_size=10
+        "H3a_SIBYLL23C", flux, ebins, czbins, "sterile", flux_path, cache_size=10
     )
 
     the_store = prop_store.store()
@@ -135,11 +133,11 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
         the_store.add_prop("mc_" + s, ["mc"], f, cache_size=1)
 
     # Convenience function for calling the nusquids flux repository
-    # This nusquids repository does the LV scenario, but the concept is easily extensible
-    def nsq_flux(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu):
-        flux = osc[(operator_dimension, lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu)]
+    # This nusquids repository does the 3+1 scenario, but the concept is easily extensible
+    def nsq_flux(numnu, dm2, th14, th24, th34, cp):
+        flux = osc[(numnu, dm2, th14, th24, th34, cp)]
         return flux
-    the_store.add_prop("nsq_flux", ["operator_dimension", "lv_emu_re", "lv_emu_im", "lv_mutau_re", "lv_mutau_im", "lv_etau_re", "lv_etau_im", "lv_ee", "lv_mumu"], nsq_flux)
+    the_store.add_prop("nsq_flux", ["numnu", "dm2", "th14", "th24", "th34", "cp"], nsq_flux)
 
     # How to get the flux for MC events from nusquids
     # That is before we modify it with additional parameters
@@ -156,58 +154,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
                 int(flavor), float(np.cos(zenith)), float(energy * units.GeV), int(ptype),
                 True
             )
-            assert(not np.isnan(res[i]))
-        assert(not np.any(np.isnan(res)))
-        if False:
-            print("Got some bad fluxes")
-            zero_mask = res == 0.0
-            if np.sum(zero_mask) > 0:
-                energy = mc_energy[zero_mask]
-                zenith = mc_zenith[zero_mask]
-                flux = res[zero_mask]
-                print("Zero flux stats:")
-                print("Min energy = ", np.amin(energy))
-                print("Max energy = ", np.amax(energy))
-                print("Mean energy = ", np.mean(energy))
-                print("Min zenith = ", np.amin(zenith))
-                print("Max zenith = ", np.amax(zenith))
-                print("Mean zenith = ", np.mean(zenith))
-                print("Min flux = ", np.amin(flux))
-                print("Max flux = ", np.amax(flux))
-                print("Mean flux = ", np.mean(flux))
-            negative_mask = res < 0.0
-            if np.sum(negative_mask) > 0:
-                energy = mc_energy[negative_mask]
-                zenith = mc_zenith[negative_mask]
-                flux = res[negative_mask]
-                print("Negative flux stats:")
-                print("Min energy = ", np.amin(energy))
-                print("Max energy = ", np.amax(energy))
-                print("Mean energy = ", np.mean(energy))
-                print("Min zenith = ", np.amin(zenith))
-                print("Max zenith = ", np.amax(zenith))
-                print("Mean zenith = ", np.mean(zenith))
-                print("Min flux = ", np.amin(flux))
-                print("Max flux = ", np.amax(flux))
-                print("Mean flux = ", np.mean(flux))
-            mask = res <= 0.0
-            if np.sum(mask) > 0:
-                energy = mc_energy[mask]
-                zenith = mc_zenith[mask]
-                flux = res[mask]
-                print("Bad flux stats:")
-                print("Min energy = ", np.amin(energy))
-                print("Max energy = ", np.amax(energy))
-                print("Mean energy = ", np.mean(energy))
-                print("Min zenith = ", np.amin(zenith))
-                print("Max zenith = ", np.amax(zenith))
-                print("Mean zenith = ", np.mean(zenith))
-                print("Min flux = ", np.amin(flux))
-                print("Max flux = ", np.amax(flux))
-                print("Mean flux = ", np.mean(flux))
-        bad_mask = res <= 0
-        res[bad_mask] = np.amin(res[~bad_mask]) * 1e-8
-        assert(not np.any(np.isinf(res)))
         return res
 
 
@@ -222,9 +168,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
         r = (mc_energy / pivot_energy) 
         res = r ** -CRDeltaGamma
         res_d = -res * np.log(r)
-        if np.any(np.isnan(res)):
-            print(CRDeltaGamma, pivot_energy)
-        assert(not np.any(np.isnan(res)))
         return res, res_d
 
 
@@ -271,7 +214,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
     # Compute the weight of MC events
     def mc_weight(flux_conv, livetime_gen_prob):
         res = flux_conv * livetime_gen_prob[:,None]
-        assert(not np.any(np.isnan(res)))
         return res
     the_store.add_prop("mc_weight", ["flux_conv", "livetime_gen_prob"], mc_weight)
 
@@ -283,7 +225,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
     # Compute the MC expectation per bin
     def expect(binned_mc_weight):
         res = [np.sum(w, axis=0) for w in binned_mc_weight]
-        assert(not np.any(np.isnan(res)))
         return np.array(res)
     the_store.add_prop("expect", ["binned_mc_weight"], expect)
 
@@ -292,7 +233,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
         res = [np.sum(w[:,0] ** 2) for w in binned_mc_weight]
         res_d_norm = [2*np.sum(w[:,0]*w[:,1]) for w in binned_mc_weight]
         res_d_cr = [2*np.sum(w[:,0]*w[:,2]) for w in binned_mc_weight]
-        assert(not np.any(np.isnan(res)))
         return np.array([res, res_d_norm, res_d_cr]).T
     the_store.add_prop("expect_sq", ["binned_mc_weight"], expect_sq)
 
@@ -312,7 +252,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
 
     def asimov_expect(binned_asimov_data):
         res = [np.sum(w, axis=0) for w in binned_asimov_data]
-        assert(not np.any(np.isnan(res)))
         return np.array(res)[:,0]
     the_store.add_prop("asimov_expect", ["binned_asimov_data"], asimov_expect)
 
@@ -321,7 +260,6 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
         res = [np.sum(w[:,0] ** 2) for w in binned_asimov_data]
         res_d_norm = [2*np.sum(w[:,0]*w[:,1]) for w in binned_asimov_data]
         res_d_cr = [2*np.sum(w[:,0]*w[:,2]) for w in binned_asimov_data]
-        assert(not np.any(np.isnan(res)))
         return np.array(res)
     the_store.add_prop("asimov_expect_sq", ["binned_asimov_data"], asimov_expect_sq)
 
@@ -331,7 +269,7 @@ def setup_lv_analysis(weight_path=weight_path, flux_path=flux_path):
     return the_store
 
 if __name__ == "__main__":
-    the_store = setup_lv_analysis()
+    the_store = setup_sterile_analysis()
 
     # Now we can define the likelihood
     # For now we are ignoring the fact that we could have data (asimov only)
@@ -346,39 +284,30 @@ if __name__ == "__main__":
     def asimov_likelihood(parameters, asimov_parameters):
         return ad.mul(ad.sum(asimov_binned_likelihood(parameters, asimov_parameters)), -1)
 
-    operator_dimension = 3
-    lv_emu_re = 0
-    lv_emu_im = 0
-    lv_mutau_re = 1e-22
-    lv_mutau_im = 1e-22
-    lv_etau_re = 0
-    lv_etau_im = 0
-    lv_ee = 0
-    lv_mumu = 0
+    dm2 = 1.0
+    th14 = 0.0
+    th24 = np.arcsin(np.sqrt(0.1)) / 2.0
+    th34 = 0.0
+    cp = 0.0
 
     physical_params = {
-        "operator_dimension": operator_dimension,
-        "lv_emu_re": lv_emu_re,
-        "lv_emu_im": lv_emu_im,
-        "lv_mutau_re": lv_mutau_re,
-        "lv_mutau_im": lv_mutau_im,
-        "lv_etau_re": lv_etau_re,
-        "lv_etau_im": lv_etau_im,
-        "lv_ee": lv_ee,
-        "lv_mumu": lv_mumu,
+        "numnu": 4,
+        "dm2": dm2,
+        "th14": th14,
+        "th24": th24,
+        "th34": th34,
+        "cp": cp,
         "convNorm": 1.0,
         "CRDeltaGamma": 0.0,
     }
+
     asimov_params = {
-        "operator_dimension": 3,
-        "lv_emu_re": 0,
-        "lv_emu_im": 0,
-        "lv_mutau_re": 0,
-        "lv_mutau_im": 0,
-        "lv_etau_re": 0,
-        "lv_etau_im": 0,
-        "lv_ee": 0,
-        "lv_mumu": 0,
+        "numnu": 3,
+        "dm2": 0.0,
+        "th14": 0.0,
+        "th24": 0.0,
+        "th34": 0.0,
+        "cp": 0.0,
         "convNorm": 1.0,
         "CRDeltaGamma": 0.0,
     }
