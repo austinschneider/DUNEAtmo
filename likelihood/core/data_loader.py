@@ -2,7 +2,8 @@ import numpy as np
 import json
 import functools
 
-def load_data(fname='./weighted/weighted.json'):
+def _load_data(fname='./weighted/weighted.json'):
+    print(fname)
     data = json.load(open(fname, 'r'))
     energy = np.array(data["energy"])
     zenith = np.pi - np.array(data["zenith"])
@@ -138,3 +139,14 @@ def load_data(fname='./weighted/weighted.json'):
 
     return data
 
+def load_data(fnames):
+    if type(fnames) is str:
+        return _load_data(fnames)
+    res = None
+    for fname in fnames:
+        data = _load_data(fname)
+        if res is None:
+            res = data
+        else:
+            res = np.concatenate([res, data])
+    return res
