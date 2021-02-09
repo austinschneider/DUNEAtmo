@@ -234,6 +234,46 @@ int main(int argc, char ** argv) {
             "nutaubar_nc_total_xs", {"--nutaubar-nc-sigma"},
             "Path to the nutaubar NC total cross section file", 1,
         },
+        {
+            "nuebar_gr_diff_xs", {"--nuebar-gr-dsdxdy"},
+            "Path to the nuebar GR differential cross section file", 1,
+        },
+        {
+            "nuebar_gr_total_xs", {"--nuebar-gr-sigma"},
+            "Path to the nuebar GR total cross section file", 1,
+        },
+        {
+            "nuebar_gr_e_diff_xs", {"--nuebar-gr-e-dsdxdy"},
+            "Path to the nuebar GR e differential cross section file", 1,
+        },
+        {
+            "nuebar_gr_e_total_xs", {"--nuebar-gr-e-sigma"},
+            "Path to the nuebar GR e total cross section file", 1,
+        },
+        {
+            "nuebar_gr_mu_diff_xs", {"--nuebar-gr-mu-dsdxdy"},
+            "Path to the nuebar GR mu differential cross section file", 1,
+        },
+        {
+            "nuebar_gr_mu_total_xs", {"--nuebar-gr-mu-sigma"},
+            "Path to the nuebar GR mu total cross section file", 1,
+        },
+        {
+            "nuebar_gr_tau_diff_xs", {"--nuebar-gr-tau-dsdxdy"},
+            "Path to the nuebar GR tau differential cross section file", 1,
+        },
+        {
+            "nuebar_gr_tau_total_xs", {"--nuebar-gr-tau-sigma"},
+            "Path to the nuebar GR tau total cross section file", 1,
+        },
+        {
+            "nuebar_gr_had_diff_xs", {"--nuebar-gr-had-dsdxdy"},
+            "Path to the nuebar GR had differential cross section file", 1,
+        },
+        {
+            "nuebar_gr_had_total_xs", {"--nuebar-gr-had-sigma"},
+            "Path to the nuebar GR had total cross section file", 1,
+        },
     }};
 
     std::ostringstream usage;
@@ -311,6 +351,21 @@ int main(int argc, char ** argv) {
         }
     }
 
+    if(args["gr"]) {
+        interactions.push_back("gr_e");
+        interactions.push_back("gr_mu");
+        interactions.push_back("gr_tau");
+        interactions.push_back("gr_had");
+    } else {
+        std::vector<std::string> possible_interaction_suffixes = {"e", "mu", "tau", "had"};
+        for(unsigned int i=0; i<possible_interaction_suffixes.size(); ++i) {
+            if(args[possible_interaction_suffixes[i]]) {
+                interactions.push_back("gr_" + possible_interaction_suffixes[i]);
+            }
+        }
+    }
+
+
     std::vector<std::string> neutrinos;
     std::vector<std::string> possible_neutrinos = {"nue", "nuebar", "numu", "numubar", "nutau", "nutaubar"};
     for(unsigned int i=0; i<possible_neutrinos.size(); ++i) {
@@ -332,6 +387,10 @@ int main(int argc, char ** argv) {
         {"numubar_nc", {LeptonInjector::Particle::NuMuBar, LeptonInjector::Particle::Hadrons}},
         {"nutau_nc", {LeptonInjector::Particle::NuTau, LeptonInjector::Particle::Hadrons}},
         {"nutaubar_nc", {LeptonInjector::Particle::NuTauBar, LeptonInjector::Particle::Hadrons}},
+        {"nuebar_gr_e", {LeptonInjector::Particle::NuEBar, LeptonInjector::Particle::EMinus}},
+        {"nuebar_gr_mu", {LeptonInjector::Particle::NuMuBar, LeptonInjector::Particle::MuMinus}},
+        {"nuebar_gr_tau", {LeptonInjector::Particle::NuTauBar, LeptonInjector::Particle::TauMinus}},
+        {"nuebar_gr_had", {LeptonInjector::Particle::Hadrons, LeptonInjector::Particle::Hadrons}},
     };
 
     std::cout << getISOCurrentTimestamp<std::chrono::seconds>() << std::endl;
@@ -363,6 +422,16 @@ int main(int argc, char ** argv) {
     std::string nubar_nc_diff_xs = xs_base + "dsdxdy_nubar_NC_iso.fits";
     std::string nubar_nc_total_xs = xs_base + "sigma_nubar_NC_iso.fits";
 
+    std::string nuebar_gr_diff_xs = xs_base + "dsdxdy_nuebar_GR.fits";
+    std::string nuebar_gr_total_xs = xs_base + "sigma_nuebar_GR.fits";
+
+    if(args["nuebar_gr_diff_xs"]) {
+        nuebar_gr_diff_xs = args["nuebar_gr_diff_xs"].as<std::string>();
+    }
+    if(args["nuebar_gr_total_xs"]) {
+        nuebar_gr_total_xs = args["nuebar_gr_total_xs"].as<std::string>();
+    }
+
     std::map<std::string, std::pair<std::string, std::string>> default_cross_sections = {
         {"nue_cc", {nu_cc_diff_xs, nu_cc_total_xs}},
         {"nuebar_cc", {nubar_cc_diff_xs, nubar_cc_total_xs}},
@@ -376,13 +445,40 @@ int main(int argc, char ** argv) {
         {"numubar_nc", {nubar_nc_diff_xs, nubar_nc_total_xs}},
         {"nutau_nc", {nu_nc_diff_xs, nu_nc_total_xs}},
         {"nutaubar_nc", {nubar_nc_diff_xs, nubar_nc_total_xs}},
+        {"nuebar_gr_e", {nuebar_gr_diff_xs, nuebar_gr_total_xs}},
+        {"nuebar_gr_mu", {nuebar_gr_diff_xs, nuebar_gr_total_xs}},
+        {"nuebar_gr_tau", {nuebar_gr_diff_xs, nuebar_gr_total_xs}},
+        {"nuebar_gr_had", {nuebar_gr_diff_xs, nuebar_gr_total_xs}},
     };
+
+    std::vector<std::string> possible_interaction_suffixes = {"e", "mu", "tau", "had"};
+    for(unsigned int i=0; i<possible_interaction_suffixes.size(); ++i) {
+        bool replace = false;
+        std::string diff = nuebar_gr_diff_xs;
+        std::string total = nuebar_gr_total_xs;
+        std::string id = "nuebar_gr_" + possible_interaction_suffixes[i];
+        if(args[id + "_diff"]) {
+            diff = args[id + "_diff"].as<std::string>();
+            replace = true;
+        }
+        if(args[id + "_total"]) {
+            total = args[id + "_total"].as<std::string>();
+            replace = true;
+        }
+        if(replace) {
+            default_cross_sections[id] = {diff, total};
+        }
+    }
 
     std::vector<LeptonInjector::Injector> injectors;
     for(std::string & interaction : interactions) {
+        bool is_glashow = interaction.rfind("gr", 0) == 0;
         if(args[interaction]) {
             for(std::string & neutrino : neutrinos) {
                 if(args[neutrino]) {
+                    if(is_glashow and neutrino != "nuebar") {
+                        continue;
+                    }
                     std::string id = neutrino + "_" + interaction;
 
                     std::string diff_xs_id = id + "_diff_xs";
