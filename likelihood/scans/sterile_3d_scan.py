@@ -5,6 +5,8 @@ base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
 sys.path.insert(0, core_path)
 analysis_path = base_path + '/sources/DUNEAtmo/likelihood/analysis/'
+default_flux_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/fluxes/'
+default_weight_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/simulation/weighted/'
 sys.path.insert(0, analysis_path)
 import numpy as np
 import json
@@ -12,6 +14,38 @@ import scipy
 import scipy.optimize
 import sterile_analysis
 import likelihood
+import argparse                                                                                                            
+parser = argparse.ArgumentParser(description="Sterile scan")
+parser.add_argument('--flux-path',
+        type=str,
+        dest='flux_path',
+        required=False,
+        default=default_flux_path,
+        )
+parser.add_argument('--weight-path',
+        type=str,
+        dest='weight_path',
+        required=False,
+        default=default_weight_path,
+        )
+parser.add_argument('--chunks',
+        type=int,
+        dest="chunks",
+        default=0,
+        required=False,
+        )
+parser.add_argument('--chunk-number',
+        type=int,
+        dest="chunk_number",
+        default=0,
+        required=False,
+        )
+parser.add_argument('--output',
+        type=str,
+        dest='output',
+        required=True
+        )
+args = parser.parse_args()
 
 default_asimov_params = {
     "numnu": 3,
@@ -32,9 +66,36 @@ s22th34_grid = np.logspace(-2, 0, 10*2+1)
 th34_grid = np.arcsin(np.sqrt(s22th34_grid)) / 2.0
 cp = 0.0
 
-output = "sterile_scan_3d.json"
+parameter_points = []
 
-def sterile_3d_scan(asimov_params=default_asimov_params, dm2_grid=dm2_grid, th14=th14, th24_grid=th24_grid, th34_grid=th34_grid, cp=cp, output=output):
+for dm2 in dm2_grid:
+    for th24 in th24_grid:
+        for th34 in th34_grid:
+            parameter_points.append((dm2, th24, th34))
+
+items = parameter_points
+
+if args.chunks > 0:
+    a = int(np.floor(float(len(items)) / float(args.chunks)))
+    b = int(np.ceil(float(len(items)) / float(args.chunks)))
+    x = len(items) - a*args.chunks
+    if args.chunk_number < x:
+        n = b
+        n0 = n*args.chunk_number
+    else:
+        n = a
+        n0 = b*x + a*(args.chunk_number - x)
+    n1 = min(n0 + n, len(items))
+    if n0 >= len(items): 
+        exit(0)
+    items = items[n0:n1]
+
+parameter_points = items
+print(len(parameter_points), "points to process")
+
+output = args.output
+
+def sterile_3d_scan(asimov_params=default_asimov_params, parameter_points=parameter_points, output="./test.json", weight_path=default_weight_path, flux_path=default_flux_path):
     the_store = sterile_analysis.setup_sterile_analysis()
     asimov_expect = the_store.get_prop("asimov_expect", asimov_params)
     def asimov_binned_likelihood(parameters):
@@ -64,7 +125,6 @@ def sterile_3d_scan(asimov_params=default_asimov_params, dm2_grid=dm2_grid, th14
             (0.0, 0.01, -np.inf, np.inf), # CRDeltaGamma prior
             ]
 
-    entries = []
     physical_params = dict(asimov_params)
     print("Setting up fit:")
     print("\tdm2  =", 0)
@@ -89,24 +149,19 @@ def sterile_3d_scan(asimov_params=default_asimov_params, dm2_grid=dm2_grid, th14
             "convNorm": convNorm,
             "CRDeltaGamma": CRDeltaGamma,
             }
-    entries.append(entry)
     json_file = open(output, "w")
-    json.dump(entries, json_file)
+    json.dump(entry, json_file)
+    json_file.write("\n")
     json_file.close()
     print("\tfit convNorm     =", convNorm)
     print("\tfit CRDeltaGamma =", CRDeltaGamma)
     print("\tLLH =", llh)
     print()
 
-    pairs = []
-    for dm2 in dm2_grid:
-        for th24 in th24_grid:
-            for th34 in th34_grid:
-                pairs.append((dm2, th24, th34))
-    order = np.arange(len(pairs))
+    order = np.arange(len(parameter_points))
     np.random.shuffle(order)
     for i in order:
-        dm2, th24, th34 = pairs[i]
+        dm2, th24, th34 = parameter_points[i]
         print("Setting up fit:")
         print("\tdm2  =", dm2)
         print("\tth24 =", th24)
@@ -141,15 +196,12 @@ def sterile_3d_scan(asimov_params=default_asimov_params, dm2_grid=dm2_grid, th14
                 "convNorm": convNorm,
                 "CRDeltaGamma": CRDeltaGamma,
                 }
-        entries.append(entry)
-        json_file = open(output, "w")
-        json.dump(entries, json_file)
+        json_file = open(output, "a")
+        json.dump(entry, json_file)
+        json_file.write("\n")
         json_file.close()
         print("\tfit convNorm     =", convNorm)
         print("\tfit CRDeltaGamma =", CRDeltaGamma)
         print("\tLLH =", llh)
-        print()
-    json_file = open(output, "w")
-    json.dump(entries, json_file)
-    json_file.close()
 
+sterile_3d_scan(asimov_params=default_asimov_params, parameter_points=parameter_points, output=args.output, weight_path=args.weight_path, flux_path=args.flux_path)

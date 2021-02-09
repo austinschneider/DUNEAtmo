@@ -85,9 +85,9 @@ for diag3, re3, im3 in build_grid(rho_3_grid, f1_3_grid, f2_3_grid):
     params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
     parameter_points.append(params)
 
-for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
-    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
-    parameter_points.append(params)
+#for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
+#    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
+#    parameter_points.append(params)
 
 items = parameter_points
 
@@ -170,14 +170,14 @@ def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_p
         physical_params.update(p)
         prior = eval_priors((convNorm, CRDeltaGamma), priors)
         if np.isinf(prior[0]):
-            return prior
+            return (-prior[0], -prior[1])
         else:
             llh = asimov_likelihood(physical_params)
             return (-(llh[0] + prior[0]), -(llh[1] + np.array(prior[1])))
             #return -(prior + asimov_likelihood(physical_params))
     best = None
     for seed in seeds:
-        res = scipy.optimize.minimize(f, seed, bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-18, 'maxls': 20}, jac=True)
+        res = scipy.optimize.minimize(f, seed, bounds=[priors[0][2:4], priors[1][2:4]], method="L-BFGS-B", options={'ftol': 1e4*np.finfo(float).eps, 'gtol': 1e-8, 'maxls': 20}, jac=True)
         #print("Evaluate at:", res.x)
         #print("Result:", f(res.x))
         if best is None or res.fun < best.fun:
@@ -233,7 +233,7 @@ def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_p
             "convNorm": 1.0,
             "CRDeltaGamma": 0.0,
         }
-        np.set_printoptions(precision=16)
+        np.set_printoptions(precision=20)
         def f(x):
             convNorm, CRDeltaGamma = x
             p = {"convNorm": convNorm, "CRDeltaGamma": CRDeltaGamma}
@@ -244,7 +244,7 @@ def lv_2d_scan(asimov_params=default_asimov_params, parameter_points=parameter_p
             else:
                 llh = asimov_likelihood(physical_params)
                 res = (-(llh[0] + prior[0]), -(llh[1] + np.array(prior[1])))
-            print(x)
+            print(x, res)
             assert(not np.isnan(res[0]))
             return res
         best = None

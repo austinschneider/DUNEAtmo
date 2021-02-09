@@ -3,6 +3,7 @@ import os
 import os.path
 base_path = os.environ['GOLEMSPACE']
 core_path = base_path + '/sources/DUNEAtmo/likelihood/core/'
+default_flux_path = '/n/holyscratch01/arguelles_delgado_lab/Lab/DUNEAnalysis/store/fluxes/'
 sys.path.insert(0, core_path)
 import os
 import os.path
@@ -10,8 +11,7 @@ import collections
 import functools
 import numpy as np
 import nuflux
-import nuSQUIDSpy as nsq
-import nuSQUIDSTools
+import nuSQuIDS as nsq
 import oscillator
 import prop_store
 import likelihood
@@ -19,21 +19,23 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 s22th24 = 0.1
+th24 = np.arcsin(np.sqrt(0.1))/2.
 dm2 = 4.5
 
-dm2_grid = np.logspace(-1, 1, 10*2+1)
+#dm2_grid = np.logspace(-1, 1, 10*2+1)
 th14 = 0.0
-s22th24_grid = np.logspace(-2, 0, 10*2+1)
-th24_grid = np.arcsin(np.sqrt(s22th24_grid)) / 2.0
-s22th34_grid = np.logspace(-2, 0, 10*2+1)
-th34_grid = np.arcsin(np.sqrt(s22th34_grid)) / 2.0
+#s22th24_grid = np.logspace(-2, 0, 10*2+1)
+#th24_grid = np.arcsin(np.sqrt(s22th24_grid)) / 2.0
+#s22th34_grid = np.logspace(-2, 0, 10*2+1)
+#th34_grid = np.arcsin(np.sqrt(s22th34_grid)) / 2.0
+th34_grid = [0.0, 0.3]
 
 
-th24_index = np.argmin(np.abs(s22th24_grid - s22th24))
-dm2_index = np.argmin(np.abs(dm2_grid - dm2))
+#th24_index = np.argmin(np.abs(s22th24_grid - s22th24))
+#dm2_index = np.argmin(np.abs(dm2_grid - dm2))
 
-dm2 = dm2_grid[dm2_index]
-th24 = th24_grid[th24_index]
+#dm2 = dm2_grid[dm2_index]
+#th24 = th24_grid[th24_index]
 
 units = nsq.Const()
 ebins = np.logspace(1, 6, 100 + 1) * units.GeV
@@ -41,10 +43,9 @@ czbins = np.linspace(-1, 1, 100 + 1)
 
 flux = nuflux.makeFlux("H3a_SIBYLL23C")
 osc = oscillator.oscillator(
-    "H3a_SIBYLL23C", flux, ebins, czbins, "sterile", "./fluxes/", cache_size=10
+    "H3a_SIBYLL23C", flux, ebins, czbins, "sterile", default_flux_path, cache_size=10
 )
 
-baseline = nsq.nuSQUIDSAtm('./fluxes/standard/H3a_SIBYLL23C.h5')
 null = osc[(3, 0,0,0,0,0)]
 
 energy_bins = np.logspace(1, 5, 120+1)
@@ -57,15 +58,15 @@ for j in range(len(zenith_bins)-1):
     for k in range(len(energy_bins)-1):
         z = (zenith_bins[j] + zenith_bins[j+1])/2.0
         e = (energy_bins[k] + energy_bins[k+1])/2.0
-        standard_expect_0[k,j] = baseline.EvalFlavor(1, np.cos(z), e*units.GeV, 0)
-        standard_expect_1[k,j] = baseline.EvalFlavor(1, np.cos(z), e*units.GeV, 1)
+        standard_expect_0[k,j] = null.EvalFlavor(1, np.cos(z), e*units.GeV, 0)
+        standard_expect_1[k,j] = null.EvalFlavor(1, np.cos(z), e*units.GeV, 1)
 
 
 for th34 in th34_grid:
     params = (4, dm2, th14, th24, th34, 0)
     alt = osc[params]
 
-    cm = plt.get_cmap('plasma')
+    cm = plt.get_cmap('plasma_r')
     cm.set_under('black')
     norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
     sterile_expect_0 = np.empty((len(energy_bins)-1, len(zenith_bins)-1))
@@ -96,7 +97,7 @@ for th34 in th34_grid:
     fig.clf()
     plt.close(fig)
 
-    cm = plt.get_cmap('plasma')
+    cm = plt.get_cmap('plasma_r')
     cm.set_under('black')
     norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
     sterile_expect_1 = np.empty((len(energy_bins)-1, len(zenith_bins)-1))

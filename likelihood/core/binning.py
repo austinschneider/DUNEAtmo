@@ -2,18 +2,18 @@ import numpy as np
 import functools
 
 def get_bins(
-    tg_emin = 1e-1,
+    tg_emin = 1e2,
     tg_emax = 1e5,
-    tg_ebins = 18,
-    start_emin = 1e-1,
+    tg_ebins = 30,
+    start_emin = 1e2,
     start_emax = 1e5,
-    start_ebins = 18,
+    start_ebins = 30,
     tg_czmin  = -1,
     tg_czmax  = 0,
-    tg_czbins = 10,
+    tg_czbins = 20,
     start_czmin  = -1,
     start_czmax  = 1,
-    start_czbins = 20,
+    start_czbins = 40,
 ):
     """
     Get the analysis bins.

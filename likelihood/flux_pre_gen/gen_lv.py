@@ -39,18 +39,21 @@ units = nsq.Const()
 ebins = np.logspace(1, 6, 100 + 1) * units.GeV
 czbins = np.linspace(-1, 1, 100 + 1)
 
+def build_grid(rho, f1, f2):
+    one = np.ones((len(rho), len(f1), len(f2)))
+    a = one*rho[:,None,None]*f1[None,:,None]
+    b = one*rho[:,None,None]*f2[None,None,:]*np.sqrt(1-f1**2)[None,:,None]
+    c = one*rho[:,None,None]*(np.sqrt(1-f2**2)[None,None,:])*np.sqrt(1-f1**2)[None,:,None]
+    points = np.array([a.flatten(), b.flatten(), c.flatten()]).T
+    return np.unique(points, axis=0)
 
-dim3_grid = np.logspace(-25, -19, 5*6+1)
-dim3_grid = np.logspace(-25, -22, 5*3+1)
-diag3_grid = np.concatenate([[0.0], dim3_grid, -dim3_grid])
-re3_grid = np.concatenate([[0.0], dim3_grid])
-im3_grid = np.concatenate([[0.0], dim3_grid])
+rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+f1_3_grid = np.linspace(-1, 1, 50+1)
+f2_3_grid = np.linspace(0, 1, 25+1)
 
-dim4_grid = np.logspace(-29, -23, 5*6+1)
-dim4_grid = np.logspace(-29, -26, 5*3+1)
-diag4_grid = np.concatenate([[0.0], dim4_grid, -dim4_grid])
-re4_grid = np.concatenate([[0.0], dim4_grid])
-im4_grid = np.concatenate([[0.0], dim4_grid])
+rho_4_grid = np.concatenate([[0.0], np.logspace(-29, -23, 5*6+1)])
+f1_4_grid = np.linspace(-1, 1, 50+1)
+f2_4_grid = np.linspace(0, 1, 25+1)
 
 flux = nuflux.makeFlux("H3a_SIBYLL23C")
 osc = oscillator.oscillator(
@@ -60,24 +63,19 @@ osc = oscillator.oscillator(
 # lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu
 #osc[(3, 0, 0, 0, 0, 0, 0, 0, 0)]
 
-print(len(re4_grid)*len(im4_grid)*len(diag4_grid))
-print(len(re3_grid)*len(im3_grid)*len(diag3_grid))
-
 parameter_points = []
 
-for re3 in re3_grid:
-    for im3 in im3_grid:
-        for diag3 in diag3_grid:
-            params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
-            parameter_points.append(params)
+for diag3, re3, im3 in build_grid(rho_3_grid, f1_3_grid, f2_3_grid):
+    params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
+    parameter_points.append(params)
 
-for re4 in re4_grid:
-    for im4 in im4_grid:
-        for diag4 in diag4_grid:
-            params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
-            parameter_points.append(params)
+for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
+    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
+    parameter_points.append(params)
 
 items = parameter_points
+
+print(len(items))
 
 if args.chunks > 0:
     a = int(np.floor(float(len(items)) / float(args.chunks)))

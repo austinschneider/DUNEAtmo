@@ -30,6 +30,7 @@ import LWpy
 import LeptonInjector
 import json
 import glob
+import tqdm
 base_path = os.environ['GOLEMSPACE']
 
 gen_earth_model_params = [
@@ -51,27 +52,25 @@ print("prop_files:")
 print(prop_files)
 print()
 
-by_prefix = dict()
-for lic in lic_files:
+lic_by_prefix = dict()
+for lic in tqdm.tqdm(lic_files):
     base = os.path.basename(lic)
     if not base.endswith('.lic'):
         continue
     prefix = base[:-len('.lic')]
-    by_prefix[prefix] = lic
+    lic_by_prefix[prefix] = lic
 
-print(len(by_prefix))
+print(len(lic_by_prefix))
 
-joint_by_prefix = dict()
-for prop in prop_files:
+prop_by_prefix = dict()
+for prop in tqdm.tqdm(prop_files):
     base = os.path.basename(prop)
     if not base.endswith('.json'):
         continue
     prefix = base[:-len('.json')]
-    if prefix not in by_prefix:
-        continue
-    joint_by_prefix[prefix] = (by_prefix[prefix], prop)
+    prop_by_prefix[prefix] = prop
 
-print(len(joint_by_prefix))
+print(len(prop_by_prefix))
 
 def load_gen(fname):
     s = LWpy.read_stream(fname, spline_dir='./splines/')
@@ -132,7 +131,7 @@ def merge_json(j0, j1):
         res[k] = np.concatenate([v0, v1])
     v0 = j0["injector_count"]
     v1 = j1["injector_count"]
-    c = [c1 for c0, c1 in zip(v0, v1)]
+    c = [c0 + c1 for c0, c1 in zip(v0, v1)]
     res["injector_count"] = c
     
     return res
@@ -159,15 +158,9 @@ all_blocks = []
 if os.path.exists(lic_output):
     all_blocks = load_gen(lic_output)
 else:
-    for prefix, (lic, prop) in joint_by_prefix.items():
-        json_data = read_file(prop)
-        n_prop_events = np.sum(json_data["injector_count"])
-        del json_data
+    for prefix, lic in lic_by_prefix.items():
         blocks = load_gen(lic)
         n_gen_events = count_gen_events(blocks)
-        print("N gen:", n_gen_events, "N prop:", n_prop_events)
-        if n_prop_events != n_gen_events:
-            continue
         all_blocks.extend(blocks)
         print(len(all_blocks))
         all_blocks = LWpy.merge_blocks(all_blocks)
@@ -224,6 +217,7 @@ def calc_gen_prob(json_data):
 
     gen_prob = np.zeros(len(props))
     for i, gen in enumerate(generators):
+        print("Generator " + str(i+1) + "/" + str(len(generators)))
         p = gen.prob_final_state(props)
         pp = gen.prob_stat(props)
         p *= pp
@@ -263,7 +257,7 @@ def calc_gen_prob(json_data):
 gen_prob = []
 all_json = dict()
 tot_prop_events = 0
-for prefix, (lic, prop) in joint_by_prefix.items():
+for prefix, prop in tqdm.tqdm(prop_by_prefix.items()):
     json_data = read_file(prop)
     gen_prob.extend(calc_gen_prob(json_data).tolist())
     n_prop_events = np.sum(json_data["injector_count"])
@@ -277,13 +271,13 @@ for prefix, (lic, prop) in joint_by_prefix.items():
             all_json[k] += list(json_data[k])
 
 n_gen_events = count_gen_events(all_blocks)
-if n_gen_events != tot_prop_events:
-    print("Generated event count does not match propagated event count!!")
-    print("Generated events:", n_gen_events)
-    print("Propagated events:", tot_prop_events)
-    print("Applying approximate rescaling!")
-    gen_prob = (np.array(gen_prob) * n_gen_events / tot_prop_events).tolist()
-    os.remove(lic_output)
+#if n_gen_events != tot_prop_events:
+#    print("Generated event count does not match propagated event count!!")
+#    print("Generated events:", n_gen_events)
+#    print("Propagated events:", tot_prop_events)
+#    print("Applying approximate rescaling!")
+#    gen_prob = (np.array(gen_prob) * n_gen_events / tot_prop_events).tolist()
+os.remove(lic_output)
 
 json_data = all_json
 json_data["gen_prob"] = gen_prob
