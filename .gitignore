@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# SLURM cluster output
+jobs/fas/**/*.out
+jobs/fas/**/*.err
