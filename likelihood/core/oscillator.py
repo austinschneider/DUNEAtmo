@@ -66,6 +66,9 @@ def params_to_fname(parameters, store_dir='./'):
     elif scenario == 'standard':
         suffix = '.h5'
         fname = baseline + suffix
+    elif scenario == 'init':
+        suffix = '.h5'
+        fname = baseline + suffix
     return os.path.join(store_dir, scenario, fname)
 
 def fname_to_params(fname):
@@ -86,6 +89,11 @@ def fname_to_params(fname):
     elif scenario == 'lv':
         ss = fname.split('_')
         params = [string_to_param(s) for s in ss[-5:]]
+        baseline = ss[0]
+        return baseline, scenario, params
+    elif scenario == 'init':
+        ss = fname.split('_')
+        params = tuple()
         baseline = ss[0]
         return baseline, scenario, params
     else:
@@ -125,17 +133,20 @@ class oscillator:
                 obj = nsq.nuSQUIDSAtm(fname)
             elif self.scenario == 'lv':
                 obj = nsq.nuSQUIDSAtm(fname)
+            elif self.scenario == 'init':
+                obj = nsq.nuSQUIDSAtm(fname)
         else:
             self.prepare_init_state()
             obj = self.prepare_init_object(args)
-            obj.EvolveState()
+            if self.scenario != 'init':
+                obj.EvolveState()
             obj.WriteStateHDF5(fname, True)
         return obj
 
     def prepare_init_state(self, force=False):
         if self.init_state is not None and not force:
             return
-        if self.scenario == 'baseline' or self.scenario == 'sterile':
+        if self.scenario == 'baseline' or self.scenario == 'sterile' or self.scenario == 'init':
             init_state = np.zeros((len(self.czbins), len(self.ebins), 2, 4))
             units = nsq.Const()
 
@@ -248,6 +259,19 @@ class oscillator:
             nuSQ.Set_LV_OpMatrix(lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu)
 
             nuSQ.Set_initial_state(self.init_state, nsq.Basis.flavor)
+            nuSQ.Set_AutoEvolLowPass(np.pi/8., np.pi/16.)
+
+            return nuSQ
+        elif self.scenario == 'init':
+            nuSQ = nsq.nuSQUIDSAtm(self.czbins, self.ebins, 3, nsq.NeutrinoType.both, True)
+            setup_SM_oscillations(nuSQ)
+
+            nuSQ.Set_ProgressBar(True)
+            nuSQ.Set_IncludeOscillations(True)
+            nuSQ.Set_GlashowResonance(True);
+            nuSQ.Set_TauRegeneration(True);
+
+            nuSQ.Set_initial_state(self.init_state[:,:,:,:3], nsq.Basis.flavor)
 
             return nuSQ
         else:
