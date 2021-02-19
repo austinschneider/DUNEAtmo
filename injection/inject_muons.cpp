@@ -115,6 +115,10 @@ int main(int argc, char ** argv) {
             "Inject NC events?", 0,
         },
         {
+            "gr", {"--gr"},
+            "Inject GR events?", 0,
+        },
+        {
             "nue", {"--nue"},
             "Inject nue events?", 0,
         },
