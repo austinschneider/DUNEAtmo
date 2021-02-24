@@ -119,6 +119,22 @@ int main(int argc, char ** argv) {
             "Inject GR events?", 0,
         },
         {
+            "gr_e", {"--gr-e"},
+            "Inject GR e events?", 0,
+        },
+        {
+            "gr_mu", {"--gr-mu"},
+            "Inject GR mu events?", 0,
+        },
+        {
+            "gr_tau", {"--gr-tau"},
+            "Inject GR tau events?", 0,
+        },
+        {
+            "gr_had", {"--gr-had"},
+            "Inject GR had events?", 0,
+        },
+        {
             "nue", {"--nue"},
             "Inject nue events?", 0,
         },
@@ -374,7 +390,7 @@ int main(int argc, char ** argv) {
     } else {
         std::vector<std::string> possible_interaction_suffixes = {"e", "mu", "tau", "had"};
         for(unsigned int i=0; i<possible_interaction_suffixes.size(); ++i) {
-            if(args[possible_interaction_suffixes[i]]) {
+            if(args["gr_" + possible_interaction_suffixes[i]]) {
                 interactions.push_back("gr_" + possible_interaction_suffixes[i]);
             }
         }
@@ -472,12 +488,12 @@ int main(int argc, char ** argv) {
         std::string diff = nuebar_gr_diff_xs;
         std::string total = nuebar_gr_total_xs;
         std::string id = "nuebar_gr_" + possible_interaction_suffixes[i];
-        if(args[id + "_diff"]) {
-            diff = args[id + "_diff"].as<std::string>();
+        if(args[id + "_diff_xs"]) {
+            diff = args[id + "_diff_xs"].as<std::string>();
             replace = true;
         }
-        if(args[id + "_total"]) {
-            total = args[id + "_total"].as<std::string>();
+        if(args[id + "_total_xs"]) {
+            total = args[id + "_total_xs"].as<std::string>();
             replace = true;
         }
         if(replace) {
