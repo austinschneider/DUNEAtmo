@@ -4,7 +4,7 @@
 #SBATCH --output=array_%A_%a.out
 #SBATCH --error=array_%A_%a.err
 #SBATCH --array=1-10
-#SBATCH --time=02:00:00
+#SBATCH --time=00:10:00
 #SBATCH --partition=arguelles_delgado
 #SBATCH --ntasks=1
 #SBATCH --mem=2G
