@@ -71,7 +71,8 @@ def build_grid(rho, f1, f2):
     points = np.array([a.flatten(), b.flatten(), c.flatten()]).T
     return np.unique(points, axis=0)
 
-rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+#rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+rho_3_grid = np.concatenate([[0.0], np.logspace(-24, -20, 20*4+1)])
 f1_3_grid = np.linspace(-1, 1, 50+1)
 f2_3_grid = np.linspace(0, 1, 25+1)
 
