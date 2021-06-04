@@ -47,6 +47,12 @@ def _load_data(fname='./weighted/weighted.json'):
     muon_start_zenith = np.array(entry_zenith)
     mask = np.isnan(muon_start_zenith)
     muon_start_zenith[mask] = mu_zenith[mask]
+    rand = np.random.default_rng(seed=2303)
+    factor_0 = rand.normal(loc=0.0, scale=(0.1/180*np.pi), size=np.shape(muon_start_zenith))
+    muon_start_zenith += factor_0
+    muon_start_zenith = np.pi - muon_start_zenith
+    muon_start_zenith = np.abs(muon_start_zenith)
+    muon_start_zenith = np.pi - muon_start_zenith
     muon_nx = exit_x - entry_x
     muon_ny = exit_y - entry_y
     muon_nz = exit_z - entry_z
@@ -57,12 +63,19 @@ def _load_data(fname='./weighted/weighted.json'):
     muon_zenith = np.pi - np.arccos(muon_nz)
     muon_azimuth = 2.*np.pi - np.arctan2(muon_ny, muon_nx)
 
-    rand = np.random.default_rng(seed=2303)
-    mask_0 = morphology == 3
-    mask_1 = functools.reduce(np.logical_or, [morphology == 1, morphology == 4, morphology == 5])
-    #factor_0 = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=np.sum(mask_0))
-    factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.2)) + abs(np.log10(0.8)))/2., size=np.sum(mask_0))
-    factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log10(1.1)) + abs(np.log10(0.9)))/2., size=np.sum(mask_1))
+
+    mask_0 = morphology == 3 # through-going
+    mask_1 = functools.reduce(np.logical_or, [morphology == 1, morphology == 4, morphology == 5]) # other
+
+    gen_prob[mask_1] *= (2.65/1.3982)
+
+    ##factor_0 = rand.lognormal(mean=0.0, sigma=np.log10(2.0), size=np.sum(mask_0))
+    factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log(1.2)) + abs(np.log(0.8)))/2., size=np.sum(mask_0))
+    factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log(1.1)) + abs(np.log(0.9)))/2., size=np.sum(mask_1))
+    #factor_0 = rand.lognormal(mean=0.0, sigma=(abs(np.log(1.4)) + abs(np.log(0.6)))/2., size=np.sum(mask_0))
+    #factor_1 = rand.lognormal(mean=0.0, sigma=(abs(np.log(1.2)) + abs(np.log(0.8)))/2., size=np.sum(mask_1))
+    #factor_0 = rand.lognormal(mean=0.0, sigma=1.3, size=np.sum(mask_0))
+    #factor_1 = rand.lognormal(mean=0.0, sigma=1.0, size=np.sum(mask_1))
     reco_energy = np.empty(energy.shape)
     reco_energy[mask_0] = muon_start_energy[mask_0] * factor_0
     reco_energy[mask_1] = energy[mask_1] * factor_1
