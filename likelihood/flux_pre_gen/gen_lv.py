@@ -47,7 +47,9 @@ def build_grid(rho, f1, f2):
     points = np.array([a.flatten(), b.flatten(), c.flatten()]).T
     return np.unique(points, axis=0)
 
-rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+#rho_3_grid = np.concatenate([[0.0], np.logspace(-25, -19, 5*6+1)])
+rho_3_grid = np.concatenate([[0.0], np.logspace(-24, -22, 20*3+1)])
+#f1_3_grid = np.linspace(-1, 1, 50+1)
 f1_3_grid = np.linspace(-1, 1, 50+1)
 f2_3_grid = np.linspace(0, 1, 25+1)
 
@@ -69,9 +71,9 @@ for diag3, re3, im3 in build_grid(rho_3_grid, f1_3_grid, f2_3_grid):
     params = (3, 0, 0, re3, im3, 0, 0, 0, diag3)
     parameter_points.append(params)
 
-for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
-    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
-    parameter_points.append(params)
+#for diag4, re4, im4 in build_grid(rho_4_grid, f1_4_grid, f2_4_grid):
+#    params = (4, 0, 0, re4, im4, 0, 0, 0, diag4)
+#    parameter_points.append(params)
 
 items = parameter_points
 
