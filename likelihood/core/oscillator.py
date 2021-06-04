@@ -88,7 +88,7 @@ def fname_to_params(fname):
             return fname, scenario, (3, 0,0,0,0,0)
     elif scenario == 'lv':
         ss = fname.split('_')
-        params = [string_to_param(s) for s in ss[-5:]]
+        params = [string_to_param(s) for s in ss[-9:]]
         baseline = ss[0]
         return baseline, scenario, params
     elif scenario == 'init':
@@ -259,7 +259,7 @@ class oscillator:
             nuSQ.Set_LV_OpMatrix(lv_emu_re, lv_emu_im, lv_mutau_re, lv_mutau_im, lv_etau_re, lv_etau_im, lv_ee, lv_mumu)
 
             nuSQ.Set_initial_state(self.init_state, nsq.Basis.flavor)
-            nuSQ.Set_AutoEvolLowPass(np.pi/8., np.pi/16.)
+            #nuSQ.Set_AutoEvolLowPass(np.pi/8., np.pi/16.)
 
             return nuSQ
         elif self.scenario == 'init':
